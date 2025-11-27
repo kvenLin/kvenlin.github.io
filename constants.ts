@@ -1,3 +1,4 @@
+
 import { FileSystem, FileType } from './types';
 
 export const INITIAL_FILE_SYSTEM: FileSystem = {
@@ -49,23 +50,24 @@ export const INITIAL_FILE_SYSTEM: FileSystem = {
     date: '2023-10-27',
     tags: ['system'],
     content: `
-# Welcome to DevBlog v2.0 🚀
+# 欢迎来到 DevBlog v2.0 🚀
 
-This is a personal blog engineered to feel like home.
+这是一个设计成类似 IDE 风格的个人博客。
 
-## Tech Stack
-- **Framework**: React 18
-- **Styling**: Tailwind CSS
-- **Type Safety**: TypeScript
-- **Vibe**: VS Code / Monokai
+## 技术栈
+- **框架**: React 18
+- **样式**: Tailwind CSS
+- **类型安全**: TypeScript
+- **风格**: VS Code / Monokai / Cyberpunk
 
-## Navigation
-Use the **Explorer** on the left to navigate through my thoughts.
-Open the **Terminal** below to run system commands.
+## 导航
+使用左侧的 **Explorer** 浏览我的想法。
+打开下方的 **Terminal** 运行系统命令。
 
-### Latest Updates
-- Added comprehensive support for \`react-markdown\`
-- Implemented file tree recursion
+### 最新更新
+- 增加了中文本地化支持
+- 实现了文件树递归渲染
+- 增加了赛博朋克风格动效
 `
   },
   'file-config': {
@@ -77,7 +79,7 @@ Open the **Terminal** below to run system commands.
     content: `\`\`\`json
 {
   "name": "developer-brain-dump",
-  "version": "1.0.0",
+  "version": "2.0.4",
   "description": "Thoughts compiled into code",
   "author": "Senior Engineer",
   "license": "MIT",
@@ -97,21 +99,21 @@ Open the **Terminal** below to run system commands.
     date: '2023-11-15',
     tags: ['react', 'frontend'],
     content: `
-# Mastering React Hooks: Beyond the Basics
+# 精通 React Hooks: 超越基础
 
-Hooks changed the way we write React. But are you using them effectively?
+Hooks 彻底改变了我们编写 React 的方式。但你真的在高效使用它们吗？
 
-## The Dependency Array Trap
+## 依赖数组的陷阱
 
-We've all been there. Infinite loops in \`useEffect\`.
+我们都经历过 \`useEffect\` 的无限循环。
 
 \`\`\`tsx
-// Bad ❌
+// 错误示范 ❌
 useEffect(() => {
   fetchData();
-}, [fetchData]); // Infinite loop if fetchData isn't memoized
+}, [fetchData]); // 如果 fetchData 没有被 memoize，会导致无限循环
 
-// Good ✅
+// 正确做法 ✅
 const fetchData = useCallback(() => {
   // ...
 }, [dependency]);
@@ -121,10 +123,10 @@ useEffect(() => {
 }, [fetchData]);
 \`\`\`
 
-## Custom Hooks
-Encapsulate logic. If you find yourself writing the same \`useEffect\` twice, extract it.
+## 自定义 Hooks
+封装逻辑。如果你发现自己写了两次相同的 \`useEffect\`，请把它提取出来。
 
-> "Code is like humor. When you have to explain it, it’s bad." - Cory House
+> "代码就像笑话。如果你必须解释它，那它就很烂。" - Cory House
 `
   },
   'post-architecture': {
@@ -135,20 +137,20 @@ Encapsulate logic. If you find yourself writing the same \`useEffect\` twice, ex
     date: '2024-01-20',
     tags: ['architecture', 'design-patterns'],
     content: `
-# Scalable Frontend Architecture
+# 可扩展的前端架构
 
-Directories shouldn't just be piles of files. They should represent **domains**.
+目录不应该只是文件的堆砌，它们应该代表 **业务领域 (Domains)**。
 
-## Feature-Sliced Design?
-Maybe overkill for a blog, but essential for enterprise apps.
+## Feature-Sliced Design (FSD)?
+对于一个小博客来说可能杀鸡用牛刀，但对于企业级应用至关重要。
 
-1. **Shared**: Reusable UI kits
-2. **Entities**: Business logic (User, Product)
-3. **Features**: User actions (AddToCart)
-4. **Widgets**: Composition of features
-5. **Pages**: Composition of widgets
+1. **Shared**: 可复用的 UI 组件库
+2. **Entities**: 业务逻辑 (User, Product)
+3. **Features**: 用户交互 (AddToCart)
+4. **Widgets**: 功能组合
+5. **Pages**: 页面组合
 
-Keep your components pure and your side-effects contained.
+保持组件纯净，副作用受控。
 `
   },
   'file-resume': {
@@ -159,16 +161,16 @@ Keep your components pure and your side-effects contained.
     date: '2024-02-01',
     tags: ['career'],
     content: `
-SENIOR FRONTEND ENGINEER
+高级前端工程师
 ------------------------
-Passionate about pixels, performance, and developer experience.
+热衷于像素级还原、性能优化和开发者体验。
 
-EXPERIENCE:
-- Built high-frequency trading dashboards.
-- Optimized rendering performance by 300%.
-- Led a team of 5 engineers.
+工作经历:
+- 构建高频交易仪表盘
+- 将渲染性能优化了 300%
+- 领导 5 人的工程师团队
 
-SKILLS:
+技能:
 - TypeScript, React, Node.js, WebGL
 `
   },
@@ -180,9 +182,10 @@ SKILLS:
     date: '2024-02-10',
     tags: ['wip'],
     content: `
-- [ ] Build a retro game emulator in WASM
-- [ ] Write a blog post about Gemini API
-- [x] Refactor the blog to look like an IDE
+- [ ] 用 WASM 构建一个复古游戏模拟器
+- [ ] 写一篇关于 Gemini API 的博客
+- [x] 重构博客以看起来像一个 IDE
+- [x] 添加中文语言支持
 `
   }
 };

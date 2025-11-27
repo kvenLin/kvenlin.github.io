@@ -1,16 +1,19 @@
+
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Search, FileText, Command, ArrowRight } from 'lucide-react';
 import { FileSystem, FileType, FileSystemItem } from '../types';
+import { Language, translations } from '../translations';
 
 interface CommandPaletteProps {
-  isOpen: boolean;
   onClose: () => void;
   files: FileSystem;
   onFileSelect: (id: string) => void;
+  language: Language;
 }
 
-export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, files, onFileSelect }) => {
+export const CommandPalette: React.FC<CommandPaletteProps> = ({ onClose, files, onFileSelect, language }) => {
+  const t = translations[language];
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -21,34 +24,30 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
     f.tags?.some(t => t.toLowerCase().includes(query.toLowerCase()))
   );
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen) return;
-
-      if (e.key === 'ArrowDown') {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
         setSelectedIndex(prev => Math.min(prev + 1, filteredFiles.length - 1));
-      } else if (e.key === 'ArrowUp') {
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
         setSelectedIndex(prev => Math.max(prev - 1, 0));
-      } else if (e.key === 'Enter') {
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
         if (filteredFiles[selectedIndex]) {
-          onFileSelect(filteredFiles[selectedIndex].id);
-          onClose();
+            onFileSelect(filteredFiles[selectedIndex].id);
+            onClose();
         }
-      } else if (e.key === 'Escape') {
+    } else if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation(); // Stop propagation so global listeners don't fire redundantly
         onClose();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, filteredFiles, selectedIndex, onFileSelect, onClose]);
+    }
+  };
 
   // Reset selection on query change
   useEffect(() => {
     setSelectedIndex(0);
   }, [query]);
-
-  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[20vh] px-4">
@@ -65,9 +64,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
             <input 
                 autoFocus
                 className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-500 text-lg"
-                placeholder="Search files or type a command..."
+                placeholder={t.searchPrompt}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
             />
             <div className="flex gap-2">
                  <kbd className="hidden sm:inline-block px-2 py-0.5 bg-white/10 rounded text-[10px] text-gray-400 font-mono">ESC</kbd>
@@ -87,6 +87,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
                             onFileSelect(file.id);
                             onClose();
                         }}
+                        onMouseEnter={() => setSelectedIndex(index)}
                         className={`
                             flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer transition-colors
                             ${index === selectedIndex ? 'bg-blue-600/20 text-blue-100' : 'text-gray-400 hover:bg-white/5'}
@@ -103,10 +104,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
         </div>
         
         <div className="px-4 py-2 bg-black/20 text-[10px] text-gray-500 border-t border-white/5 flex justify-between">
-            <span>PRO TIP: Search by tags with #</span>
+            <span>{t.proTip}</span>
             <div className="flex items-center gap-1">
                 <Command size={10} />
-                <span>+ K to open</span>
+                <span>{t.openPalette}</span>
             </div>
         </div>
       </motion.div>

@@ -1,8 +1,10 @@
+
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronDown, X, Search } from 'lucide-react';
+import { ChevronRight, ChevronDown, X, Search, ChevronLeft, Menu } from 'lucide-react';
 import { FileSystem, FileSystemItem, FileType } from '../types';
 import { IconHelper } from './IconHelper';
+import { Language, translations } from '../translations';
 
 interface FileExplorerProps {
   files: FileSystem;
@@ -13,9 +15,11 @@ interface FileExplorerProps {
   activeTag: string | null;
   onTagClick: (tag: string | null) => void;
   onOpenSearch?: () => void;
+  language: Language;
+  onToggleSidebar: () => void; // New prop
 }
 
-interface FileTreeItemProps extends Omit<FileExplorerProps, 'onNavigateHome' | 'onTagClick' | 'activeTag' | 'onOpenSearch'> {
+interface FileTreeItemProps extends Omit<FileExplorerProps, 'onNavigateHome' | 'onTagClick' | 'activeTag' | 'onOpenSearch' | 'language' | 'onToggleSidebar'> {
   itemId: string;
   depth: number;
   filterTag: string | null;
@@ -60,9 +64,10 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
         layout
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
+        whileHover={{ x: 4, transition: { duration: 0.2 } }}
         transition={{ delay: depth * 0.05 }}
         className={`
-          relative flex items-center py-1.5 cursor-pointer select-none text-sm transition-all duration-200 group rounded-md mx-2 mb-0.5
+          relative flex items-center py-1.5 cursor-pointer select-none text-sm transition-colors duration-200 group rounded-md mx-2 mb-0.5
           ${isActive ? 'bg-cyan-500/20 text-cyan-50' : 'text-gray-400 hover:text-gray-100 hover:bg-white/5'}
           ${filterTag && !isMatch && !isFolder ? 'opacity-30' : 'opacity-100'}
         `}
@@ -130,7 +135,8 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
 };
 
 export const FileExplorer: React.FC<FileExplorerProps> = (props) => {
-  const { files, onNavigateHome, activeFileId, activeTag, onTagClick, onOpenSearch } = props;
+  const { files, onNavigateHome, activeFileId, activeTag, onTagClick, onOpenSearch, language, onToggleSidebar } = props;
+  const t = translations[language];
 
   const allTags = useMemo(() => {
     const tags = new Set<string>();
@@ -141,10 +147,18 @@ export const FileExplorer: React.FC<FileExplorerProps> = (props) => {
   }, [files]);
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden gap-6 pt-4">
+    <div className="flex-1 flex flex-col overflow-hidden gap-6 pt-0">
       
+      {/* Header / Toggle */}
+      <div className="flex justify-between items-center p-3 px-4 border-b border-white/5 bg-black/20">
+         <span className="text-[10px] font-mono text-cyan-500/70 border border-cyan-900/30 px-2 py-0.5 rounded bg-cyan-950/20">DEV.OS</span>
+         <button onClick={onToggleSidebar} className="text-gray-500 hover:text-white transition-colors" title="Collapse Sidebar (Zen Mode)">
+            <ChevronLeft size={16} />
+         </button>
+      </div>
+
       {/* Quick Access Section */}
-      <div className="flex flex-col gap-1 px-2">
+      <div className="flex flex-col gap-1 px-2 mt-2">
          
          <div 
             onClick={onOpenSearch}
@@ -152,14 +166,14 @@ export const FileExplorer: React.FC<FileExplorerProps> = (props) => {
          >
             <div className="flex items-center gap-2 group-hover:text-gray-300">
                 <Search size={12} />
-                <span>Search files...</span>
+                <span>{t.searchPlaceholder}</span>
             </div>
             <kbd className="hidden md:block bg-black/30 px-1.5 rounded text-[10px] font-mono">⌘K</kbd>
          </div>
 
-         <div className="px-3 py-2 text-[10px] font-bold text-gray-500 tracking-widest uppercase">Quick Access</div>
+         <div className="px-3 py-2 text-[10px] font-bold text-gray-500 tracking-widest uppercase">{t.quickAccess}</div>
          <motion.button 
-            whileHover={{ scale: 1.02 }}
+            whileHover={{ scale: 1.02, x: 5 }}
             whileTap={{ scale: 0.98 }}
             onClick={onNavigateHome}
             className={`
@@ -169,7 +183,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = (props) => {
          >
             <div className="relative z-10 flex items-center gap-3">
                 <IconHelper name="dashboard" type="dashboard" className={activeFileId === null && !activeTag ? 'text-white' : ''} />
-                <span className="font-medium">Dashboard</span>
+                <span className="font-medium">{t.dashboard}</span>
             </div>
             {activeFileId === null && !activeTag && (
                 <div className="absolute inset-0 bg-white/10 animate-pulse" />
@@ -180,10 +194,10 @@ export const FileExplorer: React.FC<FileExplorerProps> = (props) => {
       {/* Tags Section */}
       <div className="flex flex-col gap-1 px-2 min-h-[80px]">
         <div className="px-3 py-2 text-[10px] font-bold text-gray-500 tracking-widest uppercase flex justify-between items-center">
-            <span>Filter by Tags</span>
+            <span>{t.filterTags}</span>
             {activeTag && (
                 <button onClick={() => onTagClick(null)} className="text-gray-500 hover:text-white flex items-center gap-1 transition-colors">
-                    <span className="text-[10px]">Clear</span>
+                    <span className="text-[10px]">{t.clear}</span>
                     <X size={10} />
                 </button>
             )}
@@ -217,7 +231,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = (props) => {
       {/* Explorer Tree */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="px-5 py-2 text-[10px] font-bold text-gray-500 tracking-widest uppercase flex items-center justify-between">
-            <span>Project Source</span>
+            <span>{t.projectSource}</span>
             {activeTag && <IconHelper name="filter" type="filter" className="animate-pulse text-cyan-400" />}
         </div>
         <div className="flex-1 overflow-y-auto font-sans scrollbar-hide mask-image-b pb-4">
