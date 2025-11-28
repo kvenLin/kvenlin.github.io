@@ -13,6 +13,7 @@ export interface FileSystemItem {
   isOpen?: boolean; // For folder expansion state
   date?: string;
   tags?: string[];
+  categories?: string[];
 }
 
 export interface FileSystem {

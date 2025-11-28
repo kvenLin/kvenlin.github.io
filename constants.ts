@@ -91,71 +91,9 @@ export const INITIAL_FILE_SYSTEM: FileSystem = {
 }
 \`\`\``
   },
-  'post-react-hooks': {
-    id: 'post-react-hooks',
-    name: 'mastering-hooks.md',
-    type: FileType.FILE,
-    parentId: 'folder-posts',
-    date: '2023-11-15',
-    tags: ['react', 'frontend'],
-    content: `
-# 精通 React Hooks: 超越基础
-
-Hooks 彻底改变了我们编写 React 的方式。但你真的在高效使用它们吗？
-
-## 依赖数组的陷阱
-
-我们都经历过 \`useEffect\` 的无限循环。
-
-\`\`\`tsx
-// 错误示范 ❌
-useEffect(() => {
-  fetchData();
-}, [fetchData]); // 如果 fetchData 没有被 memoize，会导致无限循环
-
-// 正确做法 ✅
-const fetchData = useCallback(() => {
-  // ...
-}, [dependency]);
-
-useEffect(() => {
-  fetchData();
-}, [fetchData]);
-\`\`\`
-
-## 自定义 Hooks
-封装逻辑。如果你发现自己写了两次相同的 \`useEffect\`，请把它提取出来。
-
-> "代码就像笑话。如果你必须解释它，那它就很烂。" - Cory House
-`
-  },
-  'post-architecture': {
-    id: 'post-architecture',
-    name: 'scalable-frontend.md',
-    type: FileType.FILE,
-    parentId: 'folder-posts',
-    date: '2024-01-20',
-    tags: ['architecture', 'design-patterns'],
-    content: `
-# 可扩展的前端架构
-
-目录不应该只是文件的堆砌，它们应该代表 **业务领域 (Domains)**。
-
-## Feature-Sliced Design (FSD)?
-对于一个小博客来说可能杀鸡用牛刀，但对于企业级应用至关重要。
-
-1. **Shared**: 可复用的 UI 组件库
-2. **Entities**: 业务逻辑 (User, Product)
-3. **Features**: 用户交互 (AddToCart)
-4. **Widgets**: 功能组合
-5. **Pages**: 页面组合
-
-保持组件纯净，副作用受控。
-`
-  },
   'file-resume': {
     id: 'file-resume',
-    name: 'resume.txt',
+    name: 'resume.md',
     type: FileType.FILE,
     parentId: 'folder-public',
     date: '2024-02-01',

@@ -22,51 +22,79 @@ export const MatrixBackground: React.FC = () => {
     const alphabet = katakana + latin + nums;
 
     const fontSize = 16;
-    const columns = width / fontSize;
+    const columns = Math.ceil(width / fontSize);
 
     const rainDrops: number[] = [];
     for (let x = 0; x < columns; x++) {
-      rainDrops[x] = Math.random() * height / fontSize; // Start at random heights
+      rainDrops[x] = Math.floor(Math.random() * height / fontSize); // Start at random heights
     }
 
-    const draw = () => {
-      // Semi-transparent black to create fade trail effect
-      ctx.fillStyle = 'rgba(2, 6, 23, 0.05)'; 
-      ctx.fillRect(0, 0, width, height);
+    // Animation loop variables
+    let animationFrameId: number;
+    let lastTime = 0;
+    const fps = 30; // Limit to 30 FPS for performance
+    const interval = 1000 / fps;
 
-      ctx.fillStyle = '#0F0'; // Fallback color
-      ctx.font = fontSize + 'px monospace';
+    const draw = (timestamp: number) => {
+      const deltaTime = timestamp - lastTime;
 
-      for (let i = 0; i < rainDrops.length; i++) {
-        // Random character
-        const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
-        
-        // Random coloring for "glitchy" look (mostly cyan/blue, some white)
-        const isWhite = Math.random() > 0.98;
-        ctx.fillStyle = isWhite ? '#ffffff' : '#0891b2'; // Cyan-600
+      if (deltaTime >= interval) {
+          lastTime = timestamp - (deltaTime % interval);
 
-        ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
+          // Semi-transparent black to create fade trail effect
+          ctx.fillStyle = 'rgba(2, 6, 23, 0.05)'; 
+          ctx.fillRect(0, 0, width, height);
 
-        if (rainDrops[i] * fontSize > height && Math.random() > 0.975) {
-          rainDrops[i] = 0;
+          ctx.font = fontSize + 'px monospace';
+            
+          for (let i = 0; i < rainDrops.length; i++) {
+            const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+            const isWhite = Math.random() > 0.99; // Reduced white frequency slightly
+                
+            // Only switch color if necessary. Default is cyan.
+            ctx.fillStyle = isWhite ? '#ffffff' : '#0891b2';
+            ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
+
+            if (rainDrops[i] * fontSize > height && Math.random() > 0.975) {
+                rainDrops[i] = 0;
+            }
+            rainDrops[i]++;
+          }
         }
-        rainDrops[i]++;
-      }
+        animationFrameId = requestAnimationFrame(draw);
     };
 
-    const intervalId = setInterval(draw, 30);
+    // Start loop
+    animationFrameId = requestAnimationFrame(draw);
 
     const handleResize = () => {
         width = window.innerWidth;
         height = window.innerHeight;
         canvas.width = width;
         canvas.height = height;
+        // Recalculate columns on resize
+        const newColumns = Math.ceil(width / fontSize);
+        // Preserve existing drops, add new ones if wider
+        if (newColumns > rainDrops.length) {
+             for (let x = rainDrops.length; x < newColumns; x++) {
+                rainDrops[x] = Math.floor(Math.random() * height / fontSize);
+             }
+        }
     };
-    window.addEventListener('resize', handleResize);
+    
+    // Debounce resize
+    let resizeTimeout: NodeJS.Timeout;
+    const debouncedResize = () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(handleResize, 200);
+    };
+
+    window.addEventListener('resize', debouncedResize);
 
     return () => {
-      clearInterval(intervalId);
-      window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener('resize', debouncedResize);
+      clearTimeout(resizeTimeout);
     };
   }, []);
 

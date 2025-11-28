@@ -2,15 +2,16 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { INITIAL_FILE_SYSTEM } from './constants';
-import { FileSystem } from './types';
+import { FileSystem, Theme } from './types';
 import { FileExplorer } from './components/FileExplorer';
 import { EditorArea } from './components/EditorArea';
 import { Terminal } from './components/Terminal';
 import { CommandPalette } from './components/CommandPalette';
 import { BootSequence } from './components/BootSequence';
 import { MatrixBackground } from './components/MatrixBackground'; // Imported Matrix
-import { TerminalSquare, Menu } from 'lucide-react';
+import { TerminalSquare, Menu, ArrowUp, ArrowDown, Moon, Sun } from 'lucide-react';
 import { Language, translations } from './translations';
+import { loadPosts, loadSingleFile } from './utils/postLoader';
 
 function App() {
   const [fileSystem, setFileSystem] = useState<FileSystem>(INITIAL_FILE_SYSTEM);
@@ -21,23 +22,98 @@ function App() {
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [isBooting, setIsBooting] = useState(true);
   const [language, setLanguage] = useState<Language>('zh');
+  const [theme, setTheme] = useState<Theme>(() => {
+      return (localStorage.getItem('theme') as Theme) || 'dark';
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Default to closed
   const containerRef = useRef<HTMLDivElement>(null);
   
   const t = translations[language];
 
-  // Global Mouse Tracking for Spotlight Effect
+  // Persist theme
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-        if (containerRef.current) {
-            const x = e.clientX;
-            const y = e.clientY;
-            containerRef.current.style.setProperty('--mouse-x', `${x}px`);
-            containerRef.current.style.setProperty('--mouse-y', `${y}px`);
+      localStorage.setItem('theme', theme);
+      if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+      } else {
+          document.documentElement.classList.remove('dark');
+      }
+  }, [theme]);
+
+  // Load posts and static files on mount
+  useEffect(() => {
+    const fetchData = async () => {
+        try {
+            const [posts, readme, resume] = await Promise.all([
+                loadPosts(),
+                loadSingleFile('README.md', { id: 'file-readme', parentId: 'root', tags: ['system'] }),
+                loadSingleFile('resume.md', { id: 'file-resume', name: 'resume.md', parentId: 'folder-public', tags: ['career'] })
+            ]);
+            
+            setFileSystem(prev => {
+                const newFileSystem = { ...prev };
+                
+                // Update posts
+                const postIds = posts.map(p => p.id);
+                posts.forEach(post => {
+                    newFileSystem[post.id] = post;
+                });
+                if (newFileSystem['folder-posts']) {
+                    newFileSystem['folder-posts'] = {
+                        ...newFileSystem['folder-posts'],
+                        children: postIds
+                    };
+                }
+
+                // Update README
+                if (readme) {
+                    newFileSystem['file-readme'] = readme;
+                }
+
+                // Update Resume
+                if (resume) {
+                    newFileSystem['file-resume'] = resume;
+                }
+                
+                return newFileSystem;
+            });
+        } catch (error) {
+            console.error("Failed to load data:", error);
         }
     };
+    fetchData();
+  }, []);
+
+  // Global Mouse Tracking for Spotlight Effect
+  useEffect(() => {
+    let rafId: number | null = null;
+    let mouseX = 0;
+    let mouseY = 0;
+
+    const updateMousePosition = () => {
+        if (containerRef.current) {
+            containerRef.current.style.setProperty('--mouse-x', `${mouseX}px`);
+            containerRef.current.style.setProperty('--mouse-y', `${mouseY}px`);
+        }
+        rafId = null;
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+
+        if (rafId === null) {
+            rafId = requestAnimationFrame(updateMousePosition);
+        }
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        if (rafId !== null) {
+            cancelAnimationFrame(rafId);
+        }
+    };
   }, []);
 
   // Keyboard Shortcuts (Including ESC handling)
@@ -107,8 +183,16 @@ function App() {
     setActiveTag(null);
   }, []);
 
+  // Handle just closing the active file (keeping tags)
+  const handleCloseFile = useCallback(() => {
+    setActiveFileId(null);
+  }, []);
+
   const handleTagClick = useCallback((tag: string | null) => {
     setActiveTag(tag);
+    if (tag) {
+        setIsSidebarOpen(true);
+    }
   }, []);
 
   // Handle tab click
@@ -136,7 +220,11 @@ function App() {
   return (
     <div 
         ref={containerRef}
-        className="flex h-screen w-screen bg-[#020617] text-gray-300 overflow-hidden relative selection:bg-cyan-500/30 font-sans spotlight-group"
+        className={`flex h-screen w-screen overflow-hidden relative font-sans spotlight-group transition-colors duration-300
+            ${theme === 'dark' 
+                ? 'bg-[#020617] text-gray-300 selection:bg-cyan-500/30' 
+                : 'bg-gray-100 text-gray-900 selection:bg-cyan-500/20'}
+        `}
     >
       <AnimatePresence>
         {isBooting && <BootSequence onComplete={() => setIsBooting(false)} />}
@@ -166,9 +254,17 @@ function App() {
 
       {/* Sidebar (Floating Glass with Collapse Animation) */}
       <motion.div 
-         animate={{ width: isSidebarOpen ? 300 : 0, opacity: isSidebarOpen ? 1 : 0 }}
-         transition={{ duration: 0.3, type: "spring", stiffness: 200, damping: 25 }}
-         className="z-20 h-full py-4 pl-4 hidden md:flex flex-col overflow-hidden whitespace-nowrap"
+         initial={false}
+         animate={{ 
+            width: isSidebarOpen ? 300 : 0, 
+            opacity: isSidebarOpen ? 1 : 0,
+            marginRight: isSidebarOpen ? 0 : -20 // Slightly pull content to avoid jump
+         }}
+         transition={{ 
+            duration: 0.4, 
+            ease: [0.4, 0, 0.2, 1] // Smooth cubic-bezier
+         }}
+         className="z-20 h-full py-4 pl-4 hidden md:flex flex-col overflow-hidden whitespace-nowrap relative"
       >
         <motion.div 
             className="flex-1 glass-panel rounded-2xl overflow-hidden flex flex-col shadow-2xl relative border-white/5 min-w-[300px]"
@@ -184,6 +280,7 @@ function App() {
                 onOpenSearch={() => setIsPaletteOpen(true)}
                 language={language}
                 onToggleSidebar={() => setIsSidebarOpen(false)}
+                theme={theme}
             />
 
             <div className="p-3 border-t border-white/5 text-[10px] text-gray-500 font-mono text-center bg-black/20 backdrop-blur-md">
@@ -220,12 +317,66 @@ function App() {
           onCloseTab={handleCloseTab}
           language={language}
           onOpenFile={handleFileClick}
-          isBooting={isBooting} // Pass boot state
+          isBooting={isBooting}
+          onTagClick={handleTagClick} // Pass tag handler
+          activeTag={activeTag} // Pass active tag
+          onNavigateHome={handleNavigateHome} // Pass nav home
+          onCloseFile={handleCloseFile}
+          theme={theme}
         />
       </div>
 
       {/* Floating Action Buttons */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+         {/* Theme Toggle */}
+         <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+            className={`p-3 rounded-full shadow-lg border backdrop-blur-md transition-all
+                ${theme === 'dark' 
+                    ? 'bg-black/40 text-gray-400 border-white/10 hover:text-yellow-400 hover:border-yellow-400/50' 
+                    : 'bg-white/80 text-gray-600 border-gray-200 hover:text-gray-900 hover:border-gray-400'}
+            `}
+            title={theme === 'dark' ? '切换到亮色模式' : '切换到暗色模式'}
+         >
+            {theme === 'dark' ? <Moon size={20} /> : <Sun size={20} />}
+         </motion.button>
+
+         {/* Scroll Top */}
+         <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => {
+                const container = document.getElementById('main-scroll-container');
+                if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className={`p-3 rounded-full shadow-lg border backdrop-blur-md transition-all
+                ${theme === 'dark'
+                    ? 'bg-black/40 text-gray-400 border-white/10 hover:text-cyan-400 hover:border-cyan-400/50'
+                    : 'bg-white/80 text-gray-600 border-gray-200 hover:text-cyan-500 hover:border-cyan-400'}
+            `}
+         >
+            <ArrowUp size={20} />
+         </motion.button>
+
+         {/* Scroll Bottom */}
+         <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => {
+                const container = document.getElementById('main-scroll-container');
+                if (container) container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+            }}
+            className={`p-3 rounded-full shadow-lg border backdrop-blur-md transition-all
+                ${theme === 'dark'
+                    ? 'bg-black/40 text-gray-400 border-white/10 hover:text-cyan-400 hover:border-cyan-400/50'
+                    : 'bg-white/80 text-gray-600 border-gray-200 hover:text-cyan-500 hover:border-cyan-400'}
+            `}
+         >
+            <ArrowDown size={20} />
+         </motion.button>
+
          <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
