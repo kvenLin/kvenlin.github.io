@@ -38,7 +38,7 @@ const hasMatchingChildren = (fileId: string, files: FileSystem, tag: string | nu
   return false;
 };
 
-const FileTreeItem: React.FC<FileTreeItemProps> = ({ 
+const FileTreeItem = React.memo<FileTreeItemProps>(({ 
   itemId, 
   files, 
   onToggleFolder, 
@@ -136,7 +136,7 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
       </AnimatePresence>
     </div>
   );
-};
+});
 
 export const FileExplorer: React.FC<FileExplorerProps> = (props) => {
   const { files, onNavigateHome, activeFileId, activeTag, onTagClick, onOpenSearch, language, onToggleSidebar, theme } = props;

@@ -2,8 +2,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
-import { X, Clock, GitCommit, Activity, Hash, ArrowRight, Code, Copy, Check, Cpu, Power, Lock, FolderOpen, ChevronUp, ChevronDown } from 'lucide-react';
+import { X, Clock, GitCommit, Activity, Hash, ArrowRight, Code, Copy, Check, Cpu, Power, Lock, FolderOpen, ChevronUp, ChevronDown, Folder, LayoutGrid, FileText } from 'lucide-react';
 import { FileSystemItem, Theme } from '../types';
 import { IconHelper } from './IconHelper';
 import { GlitchText } from './GlitchText';
@@ -206,47 +207,33 @@ const Dashboard: React.FC<{
                                                 <Hash size={48} />
                                             </div>
                                             <div className="flex items-center justify-between">
-                                                <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-cyan-400 border border-white/10 group-hover:bg-cyan-500/20 transition-colors">
-                                                    <FolderOpen size={16} />
-                                                </div>
-                                                <span className="text-[10px] font-mono text-gray-500 bg-black/30 px-2 py-0.5 rounded-full">{count}</span>
+                                                <Folder size={24} className="text-cyan-500 group-hover:text-cyan-400 transition-colors" />
+                                                <span className="text-xs font-mono text-gray-500 bg-black/30 px-2 py-0.5 rounded-full">{count}</span>
                                             </div>
-                                            <div>
-                                                <h3 className="text-gray-200 font-bold tracking-wide group-hover:text-cyan-300 transition-colors capitalize truncate">{cat}</h3>
-                                                <div className="h-1 w-8 bg-white/10 mt-2 rounded-full overflow-hidden">
-                                                    <motion.div 
-                                                        className="h-full bg-cyan-500"
-                                                        initial={{ width: 0 }}
-                                                        animate={{ width: '100%' }}
-                                                        transition={{ delay: 0.5 + i * 0.1, duration: 1 }}
-                                                    />
-                                                </div>
+                                            <div className="mt-auto pt-4">
+                                                <h3 className="font-medium text-gray-300 group-hover:text-cyan-300 truncate capitalize">{cat}</h3>
+                                                <div className="w-8 h-0.5 bg-cyan-500/30 mt-2 group-hover:w-full transition-all duration-500" />
                                             </div>
                                         </div>
                                     </motion.div>
                                 ))}
                             </AnimatePresence>
-                            
-                            {/* Show More / Less Button (As a card if categories exceed limit) */}
-                            {categories.length > INITIAL_VISIBLE_CATS && (
-                                <motion.button
-                                    layout
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
-                                    className="relative group cursor-pointer h-32 flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-white/10 hover:border-cyan-500/30 hover:bg-white/5 transition-all"
-                                >
-                                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-cyan-400 group-hover:bg-cyan-500/10 transition-colors">
-                                        {isCategoriesExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                                    </div>
-                                    <span className="text-xs font-mono text-gray-500 group-hover:text-cyan-300 uppercase tracking-widest">
-                                        {isCategoriesExpanded ? 'Show Less' : `+${categories.length - INITIAL_VISIBLE_CATS} More`}
-                                    </span>
-                                </motion.button>
-                            )}
                         </motion.div>
+                        
+                        {categories.length > INITIAL_VISIBLE_CATS && (
+                            <motion.button 
+                                layout
+                                onClick={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
+                                className="self-center flex items-center gap-3 px-6 py-3 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-cyan-500/30 transition-all group"
+                            >
+                                <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-cyan-400 transition-colors">
+                                    {isCategoriesExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                </div>
+                                <span className="text-xs font-mono text-gray-400 group-hover:text-white uppercase tracking-widest">
+                                    {isCategoriesExpanded ? 'Show Less' : `+${categories.length - INITIAL_VISIBLE_CATS} More Modules`}
+                                </span>
+                            </motion.button>
+                        )}
                     </motion.div>
                 )}
 
@@ -528,6 +515,7 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
               ">
                 <ReactMarkdown 
                   remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw]}
                   components={{
                     code: CodeBlock,
                     // Fix: Use div instead of p to avoid hydration errors when block elements are nested

@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { X, ChevronRight, Square, Maximize2 } from 'lucide-react';
-import { FileSystem, FileSystemItem, FileType } from '../types';
+import { FileSystem, FileSystemItem, FileType, Theme } from '../types';
 import { Language, translations } from '../translations';
 
 interface TerminalProps {
@@ -10,13 +10,18 @@ interface TerminalProps {
   onOpenFile: (id: string) => void;
   language: Language;
   setLanguage: (lang: Language) => void;
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
 }
 
-export const Terminal: React.FC<TerminalProps> = ({ onClose, files, onOpenFile, language, setLanguage }) => {
+export const Terminal: React.FC<TerminalProps> = ({ onClose, files, onOpenFile, language, setLanguage, theme, setTheme }) => {
   const t = translations[language];
   const [history, setHistory] = useState<string[]>([]);
+  const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   const [initialized, setInitialized] = useState(false);
   const [input, setInput] = useState('');
+  const [currentDirId, setCurrentDirId] = useState('root');
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -39,21 +44,55 @@ export const Terminal: React.FC<TerminalProps> = ({ onClose, files, onOpenFile, 
     inputRef.current?.focus();
   }, [history]);
 
-  // Helper to find file by name (simple fuzzy match)
-  const findFile = (name: string): FileSystemItem | undefined => {
+  // Helper to get current path string
+  const getPath = (dirId: string): string => {
+      if (dirId === 'root') return '~';
+      let path = '';
+      let currentId: string | null = dirId;
+      while (currentId && currentId !== 'root') {
+          const item = files[currentId];
+          if (!item) break;
+          path = '/' + item.name + path;
+          currentId = item.parentId;
+      }
+      return '~' + path;
+  };
+
+  // Helper to find file in current directory
+  const findFileInCurrentDir = (name: string): FileSystemItem | undefined => {
+    const currentDir = files[currentDirId];
+    if (!currentDir || !currentDir.children) return undefined;
+    
     const lowerName = name.toLowerCase();
-    return (Object.values(files) as FileSystemItem[]).find(f => 
-        f.name.toLowerCase() === lowerName || 
-        f.name.toLowerCase().startsWith(lowerName)
-    );
+    // Direct match first
+    const directMatchId = currentDir.children.find(id => {
+        const f = files[id];
+        return f?.name === name;
+    });
+    if (directMatchId) return files[directMatchId];
+
+    // Then case-insensitive
+    const insensitiveMatchId = currentDir.children.find(id => {
+        const f = files[id];
+        return f?.name.toLowerCase() === lowerName;
+    });
+    if (insensitiveMatchId) return files[insensitiveMatchId];
+    
+    return undefined;
   };
 
   const handleCommand = (cmd: string) => {
     const trimmedCmd = cmd.trim();
+    const currentPathStr = getPath(currentDirId);
+    
     if (!trimmedCmd) {
-        setHistory(prev => [...prev, `➜  ~`]);
+        setHistory(prev => [...prev, `➜  ${currentPathStr}`]);
         return;
     }
+
+    // Add to command history
+    setCommandHistory(prev => [...prev, trimmedCmd]);
+    setHistoryIndex(-1);
 
     const [command, ...args] = trimmedCmd.split(/\s+/);
     let output: string | string[] = '';
@@ -63,27 +102,66 @@ export const Terminal: React.FC<TerminalProps> = ({ onClose, files, onOpenFile, 
         output = [
           t.termUsage,
           t.cmdLs,
+          "  cd <dir>        Change directory",
+          "  pwd             Print working directory",
           t.cmdOpen,
           t.cmdCat,
+          "  echo <text>     Print text",
+          "  theme <mode>    Toggle theme (dark/light)",
           t.cmdLang,
+          "  history         Show command history",
+          "  reboot          Reload system",
           t.cmdClear,
           t.cmdExit
         ];
         break;
         
       case 'ls':
-        const rootFiles = files['root']?.children || [];
-        const srcFiles = files['folder-src']?.children || [];
-        const publicFiles = files['folder-public']?.children || [];
-        
-        const allIds = [...rootFiles, ...srcFiles, ...publicFiles];
-        const names = allIds.map(id => {
-            const f = files[id];
-            if (!f) return '';
-            return f.type === FileType.FOLDER ? `${f.name}/` : f.name;
-        }).filter(Boolean).sort();
-        
-        output = names.join('  ');
+        const currentDir = files[currentDirId];
+        if (currentDir && currentDir.children) {
+            const names = currentDir.children.map(id => {
+                const f = files[id];
+                if (!f) return '';
+                return f.type === FileType.FOLDER ? `${f.name}/` : f.name;
+            }).filter(Boolean).sort();
+            output = names.join('  ');
+        } else {
+            output = '';
+        }
+        break;
+
+      case 'cd':
+        if (args.length === 0) {
+            setCurrentDirId('root');
+        } else {
+            const target = args[0];
+            if (target === '..') {
+                const parentId = files[currentDirId]?.parentId;
+                if (parentId) setCurrentDirId(parentId);
+            } else if (target === '/' || target === '~') {
+                setCurrentDirId('root');
+            } else {
+                const dir = findFileInCurrentDir(target);
+                if (dir) {
+                    if (dir.type === FileType.FOLDER) {
+                        setCurrentDirId(dir.id);
+                    } else {
+                        output = `${t.termError} ${target} ${t.termDirectory}.`; // Actually "is not a directory" but re-using message logic
+                        output = `Error: ${target} is not a directory.`;
+                    }
+                } else {
+                    output = `${t.termError} ${target} ${t.termNotFound}.`;
+                }
+            }
+        }
+        break;
+
+      case 'pwd':
+        output = getPath(currentDirId).replace('~', '/home/visitor');
+        break;
+
+      case 'echo':
+        output = args.join(' ');
         break;
 
       case 'open':
@@ -91,7 +169,7 @@ export const Terminal: React.FC<TerminalProps> = ({ onClose, files, onOpenFile, 
             output = 'Usage: open <filename>';
         } else {
             const fileName = args[0];
-            const file = findFile(fileName);
+            const file = findFileInCurrentDir(fileName);
             if (file) {
                 if (file.type === FileType.FOLDER) {
                      output = `${t.termError} ${file.name} ${t.termDirectory}.`;
@@ -110,7 +188,7 @@ export const Terminal: React.FC<TerminalProps> = ({ onClose, files, onOpenFile, 
             output = 'Usage: cat <filename>';
         } else {
             const fileName = args[0];
-            const file = findFile(fileName);
+            const file = findFileInCurrentDir(fileName);
             if (file) {
                 if (file.type === FileType.FOLDER) {
                      output = `${t.termError} ${file.name} ${t.termDirectory}.`;
@@ -124,6 +202,21 @@ export const Terminal: React.FC<TerminalProps> = ({ onClose, files, onOpenFile, 
             } else {
                 output = `${t.termError} ${fileName} ${t.termNotFound}.`;
             }
+        }
+        break;
+        
+      case 'theme':
+        if (args.length > 0) {
+            const mode = args[0].toLowerCase();
+            if (mode === 'dark' || mode === 'light') {
+                setTheme(mode);
+                output = `Theme set to ${mode} mode.`;
+            } else {
+                output = 'Usage: theme <dark|light>';
+            }
+        } else {
+            setTheme(theme === 'dark' ? 'light' : 'dark');
+            output = `Theme toggled to ${theme === 'dark' ? 'light' : 'dark'} mode.`;
         }
         break;
 
@@ -140,6 +233,14 @@ export const Terminal: React.FC<TerminalProps> = ({ onClose, files, onOpenFile, 
             }
         }
         break;
+      
+      case 'history':
+        output = commandHistory;
+        break;
+
+      case 'reboot':
+        window.location.reload();
+        return;
 
       case 'whoami':
         output = 'visitor@devblog-system';
@@ -161,13 +262,32 @@ export const Terminal: React.FC<TerminalProps> = ({ onClose, files, onOpenFile, 
         output = t.termCommandNotFound;
     }
 
-    setHistory(prev => [...prev, `➜  ~ ${cmd}`, ...(Array.isArray(output) ? output : [output]), '']);
+    setHistory(prev => [...prev, `➜  ${currentPathStr} ${cmd}`, ...(Array.isArray(output) ? output : [output]), '']);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleCommand(input);
       setInput('');
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (commandHistory.length > 0) {
+            const newIndex = historyIndex + 1;
+            if (newIndex < commandHistory.length) {
+                setHistoryIndex(newIndex);
+                setInput(commandHistory[commandHistory.length - 1 - newIndex]);
+            }
+        }
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (historyIndex > 0) {
+            const newIndex = historyIndex - 1;
+            setHistoryIndex(newIndex);
+            setInput(commandHistory[commandHistory.length - 1 - newIndex]);
+        } else if (historyIndex === 0) {
+            setHistoryIndex(-1);
+            setInput('');
+        }
     }
   };
 
@@ -194,7 +314,7 @@ export const Terminal: React.FC<TerminalProps> = ({ onClose, files, onOpenFile, 
         ))}
         <div className="flex items-center text-cyan-400 mt-2 font-bold group">
           <span className="mr-2">➜</span>
-          <span className="mr-2 text-purple-400">~</span>
+          <span className="mr-2 text-purple-400">{getPath(currentDirId)}</span>
           <input 
             ref={inputRef}
             className="flex-1 bg-transparent border-none outline-none text-gray-100 font-normal caret-cyan-400"
@@ -210,3 +330,4 @@ export const Terminal: React.FC<TerminalProps> = ({ onClose, files, onOpenFile, 
     </div>
   );
 };
+
