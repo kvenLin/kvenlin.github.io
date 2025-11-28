@@ -281,7 +281,7 @@ const Dashboard: React.FC<{
                             { 
                                 icon: GitCommit, 
                                 label: t.totalPosts, 
-                                value: (Object.values(files) as FileSystemItem[]).filter(f => f.name.endsWith('.md')).length, 
+                                value: (Object.values(files) as FileSystemItem[]).filter(f => f.name.endsWith('.md') && f.parentId?.includes('post')).length, 
                                 color: "text-purple-400" 
                             },
                             { 
@@ -418,6 +418,15 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
 }) => {
   const activeFile = activeFileId ? files[activeFileId] : null;
   const contentRef = useRef<HTMLDivElement>(null);
+  
+  // Update Document Title
+  useEffect(() => {
+    if (activeFile) {
+      document.title = `${activeFile.name} | ${siteConfig.title}`;
+    } else {
+      document.title = siteConfig.title;
+    }
+  }, [activeFile]);
   
   // Scroll Progress
   const { scrollYProgress } = useScroll({ container: contentRef });

@@ -50,24 +50,12 @@ export const INITIAL_FILE_SYSTEM: FileSystem = {
     date: '2023-10-27',
     tags: ['system'],
     content: `
-# 欢迎来到 DevBlog v2.0 🚀
+# Loading DevBlog OS...
 
-这是一个设计成类似 IDE 风格的个人博客。
+Initializing system components...
+Reading system documentation...
 
-## 技术栈
-- **框架**: React 18
-- **样式**: Tailwind CSS
-- **类型安全**: TypeScript
-- **风格**: VS Code / Monokai / Cyberpunk
-
-## 导航
-使用左侧的 **Explorer** 浏览我的想法。
-打开下方的 **Terminal** 运行系统命令。
-
-### 最新更新
-- 增加了中文本地化支持
-- 实现了文件树递归渲染
-- 增加了赛博朋克风格动效
+> If this message persists, please check your connection or system integrity.
 `
   },
   'file-config': {
