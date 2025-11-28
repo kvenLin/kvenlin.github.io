@@ -46,9 +46,9 @@ export const Comments: React.FC<CommentsProps> = ({ term }) => {
       <div className="giscus-container rounded-xl overflow-hidden bg-black/20 border border-white/5 p-4">
         <Giscus
           repo={repoFullName as `${string}/${string}`}
-          repoId="R_kgDONMIYkg" // TODO: 替换为你的 repoId，从 giscus.app 获取
+          repoId="kvenLin/kvenlin.github.io" // TODO: 替换为你的 repoId，从 giscus.app 获取
           category="Announcements"
-          categoryId="DIC_kwDONMIYks4CkpKj" // TODO: 替换为你的 categoryId，从 giscus.app 获取
+          categoryId="DIC_kwDOQddnOc4CzJfK" // TODO: 替换为你的 categoryId，从 giscus.app 获取
           mapping="specific"
           term={term}
           strict="0"
