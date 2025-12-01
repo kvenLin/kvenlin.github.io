@@ -8,7 +8,7 @@ import { EditorArea } from './components/EditorArea';
 import { Terminal } from './components/Terminal';
 import { CommandPalette } from './components/CommandPalette';
 import { BootSequence } from './components/BootSequence';
-import { TerminalSquare, Menu, ArrowUp, ArrowDown, Moon, Sun } from 'lucide-react';
+import { TerminalSquare, Menu, ArrowUp, ArrowDown, Moon, Sun, LayoutGrid } from 'lucide-react';
 import { Language, translations } from './translations';
 import { loadPosts, loadSingleFile } from './utils/postLoader';
 
@@ -19,6 +19,7 @@ function App() {
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const [isFloatingMenuOpen, setIsFloatingMenuOpen] = useState(false);
   const [isBooting, setIsBooting] = useState(true);
   const [language, setLanguage] = useState<Language>('zh');
   const [theme, setTheme] = useState<Theme>(() => {
@@ -324,69 +325,96 @@ function App() {
         />
       </div>
 
-      {/* Floating Action Buttons */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
-         {/* Theme Toggle */}
-         <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
-            className={`p-3 rounded-full shadow-lg border backdrop-blur-md transition-all
-                ${theme === 'dark' 
-                    ? 'bg-black/40 text-gray-400 border-white/10 hover:text-yellow-400 hover:border-yellow-400/50' 
-                    : 'bg-white/80 text-gray-600 border-gray-200 hover:text-gray-900 hover:border-gray-400'}
-            `}
-            title={theme === 'dark' ? '切换到亮色模式' : '切换到暗色模式'}
-         >
-            {theme === 'dark' ? <Moon size={20} /> : <Sun size={20} />}
-         </motion.button>
+      {/* Floating Action Buttons Group */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 items-end">
+         <AnimatePresence>
+             {isFloatingMenuOpen && (
+                 <motion.div
+                    initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 20, scale: 0.8 }}
+                    className="flex flex-col gap-3"
+                 >
+                     {/* Theme Toggle */}
+                     <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+                        className={`p-3 rounded-full shadow-lg border backdrop-blur-md transition-all
+                            ${theme === 'dark' 
+                                ? 'bg-black/60 text-gray-400 border-white/10 hover:text-yellow-400 hover:border-yellow-400/50' 
+                                : 'bg-white/90 text-gray-600 border-gray-200 hover:text-gray-900 hover:border-gray-400'}
+                        `}
+                        title={theme === 'dark' ? '切换到亮色模式' : '切换到暗色模式'}
+                     >
+                        {theme === 'dark' ? <Moon size={20} /> : <Sun size={20} />}
+                     </motion.button>
 
-         {/* Scroll Top */}
-         <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => {
-                const container = document.getElementById('main-scroll-container');
-                if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            className={`p-3 rounded-full shadow-lg border backdrop-blur-md transition-all
-                ${theme === 'dark'
-                    ? 'bg-black/40 text-gray-400 border-white/10 hover:text-cyan-400 hover:border-cyan-400/50'
-                    : 'bg-white/80 text-gray-600 border-gray-200 hover:text-cyan-500 hover:border-cyan-400'}
-            `}
-         >
-            <ArrowUp size={20} />
-         </motion.button>
+                     {/* Scroll Top */}
+                     <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => {
+                            const container = document.getElementById('main-scroll-container');
+                            if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className={`p-3 rounded-full shadow-lg border backdrop-blur-md transition-all
+                            ${theme === 'dark'
+                                ? 'bg-black/60 text-gray-400 border-white/10 hover:text-cyan-400 hover:border-cyan-400/50'
+                                : 'bg-white/90 text-gray-600 border-gray-200 hover:text-cyan-500 hover:border-cyan-400'}
+                        `}
+                     >
+                        <ArrowUp size={20} />
+                     </motion.button>
 
-         {/* Scroll Bottom */}
-         <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => {
-                const container = document.getElementById('main-scroll-container');
-                if (container) container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-            }}
-            className={`p-3 rounded-full shadow-lg border backdrop-blur-md transition-all
-                ${theme === 'dark'
-                    ? 'bg-black/40 text-gray-400 border-white/10 hover:text-cyan-400 hover:border-cyan-400/50'
-                    : 'bg-white/80 text-gray-600 border-gray-200 hover:text-cyan-500 hover:border-cyan-400'}
-            `}
-         >
-            <ArrowDown size={20} />
-         </motion.button>
+                     {/* Scroll Bottom */}
+                     <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => {
+                            const container = document.getElementById('main-scroll-container');
+                            if (container) container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+                        }}
+                        className={`p-3 rounded-full shadow-lg border backdrop-blur-md transition-all
+                            ${theme === 'dark'
+                                ? 'bg-black/60 text-gray-400 border-white/10 hover:text-cyan-400 hover:border-cyan-400/50'
+                                : 'bg-white/90 text-gray-600 border-gray-200 hover:text-cyan-500 hover:border-cyan-400'}
+                        `}
+                     >
+                        <ArrowDown size={20} />
+                     </motion.button>
 
+                     {/* Terminal Toggle */}
+                     <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => setIsTerminalOpen(!isTerminalOpen)}
+                        className={`
+                            p-3 rounded-full shadow-lg border backdrop-blur-md transition-all
+                            ${isTerminalOpen 
+                                ? 'bg-cyan-600 text-white border-cyan-400 shadow-[0_0_15px_rgba(8,145,178,0.5)]' 
+                                : (theme === 'dark' ? 'bg-black/60 text-gray-400 border-white/10 hover:text-cyan-400 hover:border-cyan-400/50' : 'bg-white/90 text-gray-600 border-gray-200 hover:text-cyan-500 hover:border-cyan-400')}
+                        `}
+                     >
+                        <TerminalSquare size={20} />
+                     </motion.button>
+                 </motion.div>
+             )}
+         </AnimatePresence>
+
+         {/* Main Toggle Button */}
          <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            onClick={() => setIsTerminalOpen(!isTerminalOpen)}
+            onClick={() => setIsFloatingMenuOpen(!isFloatingMenuOpen)}
             className={`
-                p-3 rounded-full shadow-lg border backdrop-blur-md transition-all
-                ${isTerminalOpen 
-                    ? 'bg-cyan-600 text-white border-cyan-400 shadow-[0_0_15px_rgba(8,145,178,0.5)]' 
-                    : 'bg-black/40 text-gray-400 border-white/10 hover:text-cyan-400 hover:border-cyan-400/50'}
+                p-3.5 rounded-full shadow-xl border backdrop-blur-xl transition-all z-50
+                ${isFloatingMenuOpen 
+                    ? 'bg-cyan-500 text-white border-cyan-400 rotate-45' 
+                    : (theme === 'dark' ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/20' : 'bg-cyan-500 text-white border-cyan-600 hover:bg-cyan-600')}
             `}
          >
-            <TerminalSquare size={20} />
+            <LayoutGrid size={22} />
          </motion.button>
       </div>
 

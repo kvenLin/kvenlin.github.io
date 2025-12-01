@@ -16,7 +16,7 @@ export const INITIAL_FILE_SYSTEM: FileSystem = {
     name: 'src',
     type: FileType.FOLDER,
     parentId: 'root',
-    children: ['folder-posts', 'folder-notes'],
+    children: ['folder-posts'],
     isOpen: true
   },
   'folder-public': {
@@ -34,14 +34,6 @@ export const INITIAL_FILE_SYSTEM: FileSystem = {
     parentId: 'folder-src',
     children: ['post-react-hooks', 'post-architecture'],
     isOpen: true
-  },
-  'folder-notes': {
-    id: 'folder-notes',
-    name: 'notes',
-    type: FileType.FOLDER,
-    parentId: 'folder-src',
-    children: ['note-ideas'],
-    isOpen: false
   },
   'file-readme': {
     id: 'file-readme',
@@ -88,19 +80,6 @@ ${JSON.stringify(packageJson, null, 2)}
 
 技能:
 - TypeScript, React, Node.js, WebGL
-`
-  },
-  'note-ideas': {
-    id: 'note-ideas',
-    name: 'scratchpad.md',
-    type: FileType.FILE,
-    parentId: 'folder-notes',
-    date: '2024-02-10',
-    tags: ['wip'],
-    content: `
-- [ ] 用 WASM 构建一个复古游戏模拟器
-- [x] 重构博客以看起来像一个 IDE
-- [x] 添加中文语言支持
 `
   }
 };

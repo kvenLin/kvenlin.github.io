@@ -838,7 +838,7 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
   }, [scrollToHeading]);
 
   // TOC 折叠状态
-  const [isTocOpen, setIsTocOpen] = useState(false);
+  const [isTocOpen, setIsTocOpen] = useState(true);
   
   // Update Document Title
   useEffect(() => {
