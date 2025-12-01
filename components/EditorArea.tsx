@@ -1,16 +1,60 @@
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
-import { X, Clock, GitCommit, Activity, Hash, ArrowRight, Code, Copy, Check, Cpu, Power, Lock, FolderOpen, ChevronUp, ChevronDown, Folder, LayoutGrid, FileText } from 'lucide-react';
+import type { LanguageFn } from 'highlight.js';
+import hljs from 'highlight.js/lib/core';
+import javascript from 'highlight.js/lib/languages/javascript';
+import typescript from 'highlight.js/lib/languages/typescript';
+import javaLang from 'highlight.js/lib/languages/java';
+import bash from 'highlight.js/lib/languages/bash';
+import json from 'highlight.js/lib/languages/json';
+import yaml from 'highlight.js/lib/languages/yaml';
+import xml from 'highlight.js/lib/languages/xml';
+import cssLang from 'highlight.js/lib/languages/css';
+import scss from 'highlight.js/lib/languages/scss';
+import less from 'highlight.js/lib/languages/less';
+import sql from 'highlight.js/lib/languages/sql';
+import pythonLang from 'highlight.js/lib/languages/python';
+import graphql from 'highlight.js/lib/languages/graphql';
+import markdownLang from 'highlight.js/lib/languages/markdown';
+import 'highlight.js/styles/github-dark.css';
+import { type LucideIcon, X, Clock, GitCommit, Activity, Hash, ArrowRight, Code, Copy, Check, Cpu, Power, Lock, FolderOpen, ChevronUp, ChevronDown, Folder, LayoutGrid, FileText, Terminal, Braces, Palette, Globe, Database, Bug, List, PanelRightClose } from 'lucide-react';
 import { FileSystemItem, Theme } from '../types';
 import { IconHelper } from './IconHelper';
 import { GlitchText } from './GlitchText';
 import { Language, translations } from '../translations';
 import { siteConfig } from '../src/config/site';
 import { Comments } from './Comments';
+
+const HIGHLIGHT_LANGUAGES: Array<[string, LanguageFn]> = [
+  ['javascript', javascript as LanguageFn],
+  ['typescript', typescript as LanguageFn],
+  ['bash', bash as LanguageFn],
+  ['java', javaLang as LanguageFn],
+  ['json', json as LanguageFn],
+  ['yaml', yaml as LanguageFn],
+  ['xml', xml as LanguageFn],
+  ['css', cssLang as LanguageFn],
+  ['scss', scss as LanguageFn],
+  ['less', less as LanguageFn],
+  ['sql', sql as LanguageFn],
+  ['python', pythonLang as LanguageFn],
+  ['graphql', graphql as LanguageFn],
+  ['markdown', markdownLang as LanguageFn],
+];
+
+HIGHLIGHT_LANGUAGES.forEach(([name, language]) => {
+  if (!hljs.getLanguage(name)) {
+    hljs.registerLanguage(name, language);
+  }
+});
+
+hljs.registerAliases(['js', 'jsx', 'javascriptreact'], { languageName: 'javascript' });
+hljs.registerAliases(['ts', 'tsx', 'typescriptreact'], { languageName: 'typescript' });
+hljs.registerAliases(['sh', 'shell', 'zsh'], { languageName: 'bash' });
 
 interface EditorAreaProps {
   openFiles: string[];
@@ -330,14 +374,358 @@ const Dashboard: React.FC<{
     );
 }
 
+type LanguageTheme = {
+    label: string;
+    gradient: string;
+    border: string;
+    glow: string;
+    headerBg: string;
+    headerBorder: string;
+    labelBg: string;
+    labelText: string;
+    copyHover: string;
+    dotColors: string[];
+    codeBg: string;
+    codeText: string;
+    icon: LucideIcon;
+};
+
+const BASE_LANGUAGE_THEME: LanguageTheme = {
+    label: 'Code',
+    gradient: 'from-cyan-500/20 via-blue-500/10 to-transparent',
+    border: 'border-white/10',
+    glow: 'shadow-[0_20px_45px_rgba(15,23,42,0.45)]',
+    headerBg: 'bg-gradient-to-r from-white/10 via-white/5 to-transparent',
+    headerBorder: 'border-white/10',
+    labelBg: 'bg-cyan-500/10 border border-cyan-500/25',
+    labelText: 'text-cyan-100',
+    copyHover: 'hover:text-cyan-200',
+    dotColors: ['bg-red-500/50', 'bg-yellow-500/50', 'bg-emerald-500/50'],
+    codeBg: 'bg-[#050d1a]/95',
+    codeText: 'text-slate-100',
+    icon: Code,
+};
+
+const LANGUAGE_THEMES: Record<string, LanguageTheme> = {
+    default: BASE_LANGUAGE_THEME,
+    java: {
+        ...BASE_LANGUAGE_THEME,
+        label: 'Java',
+        gradient: 'from-orange-500/25 via-amber-400/10 to-transparent',
+        border: 'border-orange-400/40',
+        glow: 'shadow-[0_22px_50px_rgba(251,146,60,0.28)]',
+        headerBg: 'bg-gradient-to-r from-orange-500/20 via-amber-400/10 to-transparent',
+        headerBorder: 'border-orange-400/40',
+        labelBg: 'bg-orange-500/20 border border-orange-400/40',
+        labelText: 'text-orange-50',
+        copyHover: 'hover:text-orange-200',
+        dotColors: ['bg-orange-500/70', 'bg-amber-400/60', 'bg-yellow-300/60'],
+        codeBg: 'bg-[#211306]/95',
+        codeText: 'text-orange-50',
+        icon: Braces,
+    },
+    javascript: {
+        ...BASE_LANGUAGE_THEME,
+        label: 'JavaScript',
+        gradient: 'from-amber-500/20 via-amber-500/10 to-transparent',
+        border: 'border-amber-500/40',
+        glow: 'shadow-[0_22px_50px_rgba(217,119,6,0.28)]',
+        headerBg: 'bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-transparent',
+        headerBorder: 'border-amber-500/40',
+        labelBg: 'bg-amber-500/15 border border-amber-400/40',
+        labelText: 'text-amber-100',
+        copyHover: 'hover:text-amber-200',
+        dotColors: ['bg-amber-500/70', 'bg-amber-400/60', 'bg-yellow-300/60'],
+        codeBg: 'bg-[#1f1405]/95',
+        codeText: 'text-amber-50',
+        icon: Braces,
+    },
+    typescript: {
+        ...BASE_LANGUAGE_THEME,
+        label: 'TypeScript',
+        gradient: 'from-sky-500/20 via-sky-500/10 to-transparent',
+        border: 'border-sky-500/40',
+        glow: 'shadow-[0_22px_50px_rgba(56,189,248,0.28)]',
+        headerBg: 'bg-gradient-to-r from-sky-500/15 via-sky-500/10 to-transparent',
+        headerBorder: 'border-sky-500/40',
+        labelBg: 'bg-sky-500/15 border border-sky-400/40',
+        labelText: 'text-sky-100',
+        copyHover: 'hover:text-sky-200',
+        dotColors: ['bg-sky-500/70', 'bg-sky-400/60', 'bg-cyan-300/60'],
+        codeBg: 'bg-[#061b2d]/95',
+        codeText: 'text-sky-100',
+        icon: Braces,
+    },
+    shell: {
+        ...BASE_LANGUAGE_THEME,
+        label: 'Shell',
+        gradient: 'from-emerald-500/20 via-emerald-500/10 to-transparent',
+        border: 'border-emerald-500/35',
+        glow: 'shadow-[0_22px_50px_rgba(16,185,129,0.25)]',
+        headerBg: 'bg-gradient-to-r from-emerald-500/15 via-emerald-500/10 to-transparent',
+        headerBorder: 'border-emerald-500/35',
+        labelBg: 'bg-emerald-500/20 border border-emerald-400/40',
+        labelText: 'text-emerald-100',
+        copyHover: 'hover:text-emerald-200',
+        dotColors: ['bg-emerald-500/70', 'bg-emerald-400/60', 'bg-lime-300/60'],
+        codeBg: 'bg-[#041a12]/95',
+        codeText: 'text-emerald-100',
+        icon: Terminal,
+    },
+    markup: {
+        ...BASE_LANGUAGE_THEME,
+        label: 'Markup',
+        gradient: 'from-rose-500/20 via-rose-500/10 to-transparent',
+        border: 'border-rose-500/40',
+        glow: 'shadow-[0_22px_50px_rgba(244,114,182,0.28)]',
+        headerBg: 'bg-gradient-to-r from-rose-500/15 via-rose-500/10 to-transparent',
+        headerBorder: 'border-rose-500/40',
+        labelBg: 'bg-rose-500/15 border border-rose-400/40',
+        labelText: 'text-rose-100',
+        copyHover: 'hover:text-rose-200',
+        dotColors: ['bg-rose-500/70', 'bg-pink-400/60', 'bg-rose-300/60'],
+        codeBg: 'bg-[#240414]/95',
+        codeText: 'text-rose-100',
+        icon: Globe,
+    },
+    styles: {
+        ...BASE_LANGUAGE_THEME,
+        label: 'Styles',
+        gradient: 'from-violet-500/20 via-violet-500/10 to-transparent',
+        border: 'border-violet-500/40',
+        glow: 'shadow-[0_22px_50px_rgba(139,92,246,0.3)]',
+        headerBg: 'bg-gradient-to-r from-violet-500/15 via-violet-500/10 to-transparent',
+        headerBorder: 'border-violet-500/40',
+        labelBg: 'bg-violet-500/15 border border-violet-400/40',
+        labelText: 'text-violet-100',
+        copyHover: 'hover:text-violet-200',
+        dotColors: ['bg-violet-500/70', 'bg-purple-400/60', 'bg-indigo-300/60'],
+        codeBg: 'bg-[#1a0f2b]/95',
+        codeText: 'text-violet-100',
+        icon: Palette,
+    },
+    data: {
+        ...BASE_LANGUAGE_THEME,
+        label: 'Data',
+        gradient: 'from-amber-200/10 via-emerald-200/10 to-transparent',
+        border: 'border-amber-300/30',
+        glow: 'shadow-[0_22px_50px_rgba(250,204,21,0.22)]',
+        headerBg: 'bg-gradient-to-r from-amber-300/15 via-emerald-200/10 to-transparent',
+        headerBorder: 'border-amber-300/30',
+        labelBg: 'bg-amber-300/15 border border-amber-200/40',
+        labelText: 'text-amber-50',
+        copyHover: 'hover:text-amber-100',
+        dotColors: ['bg-amber-300/60', 'bg-emerald-300/60', 'bg-lime-200/60'],
+        codeBg: 'bg-[#1b1805]/95',
+        codeText: 'text-amber-100',
+        icon: Database,
+    },
+    database: {
+        ...BASE_LANGUAGE_THEME,
+        label: 'Database',
+        gradient: 'from-cyan-500/20 via-emerald-500/10 to-transparent',
+        border: 'border-cyan-500/40',
+        glow: 'shadow-[0_22px_50px_rgba(6,182,212,0.28)]',
+        headerBg: 'bg-gradient-to-r from-cyan-500/15 via-emerald-500/10 to-transparent',
+        headerBorder: 'border-cyan-500/40',
+        labelBg: 'bg-cyan-500/15 border border-cyan-400/40',
+        labelText: 'text-cyan-100',
+        copyHover: 'hover:text-cyan-100',
+        dotColors: ['bg-cyan-500/70', 'bg-emerald-400/60', 'bg-teal-300/60'],
+        codeBg: 'bg-[#031a1c]/95',
+        codeText: 'text-cyan-100',
+        icon: Database,
+    },
+    python: {
+        ...BASE_LANGUAGE_THEME,
+        label: 'Python',
+        gradient: 'from-indigo-500/20 via-sky-500/10 to-transparent',
+        border: 'border-indigo-500/35',
+        glow: 'shadow-[0_22px_50px_rgba(99,102,241,0.28)]',
+        headerBg: 'bg-gradient-to-r from-indigo-500/15 via-sky-500/10 to-transparent',
+        headerBorder: 'border-indigo-500/35',
+        labelBg: 'bg-indigo-500/15 border border-indigo-400/40',
+        labelText: 'text-indigo-100',
+        copyHover: 'hover:text-indigo-200',
+        dotColors: ['bg-indigo-500/70', 'bg-sky-400/60', 'bg-yellow-300/60'],
+        codeBg: 'bg-[#0d1028]/95',
+        codeText: 'text-indigo-100',
+        icon: Bug,
+    },
+};
+
+const LANGUAGE_ALIASES: Record<string, string> = {
+    js: 'javascript',
+    jsx: 'javascript',
+    es6: 'javascript',
+    mjs: 'javascript',
+    cjs: 'javascript',
+    ts: 'typescript',
+    tsx: 'typescript',
+    typescriptreact: 'typescript',
+    javascriptreact: 'javascript',
+    shell: 'shell',
+    sh: 'shell',
+    bash: 'shell',
+    zsh: 'shell',
+    fish: 'shell',
+    powershell: 'shell',
+    ps: 'shell',
+    html: 'markup',
+    xml: 'markup',
+    svg: 'markup',
+    md: 'markup',
+    markdown: 'markup',
+    css: 'styles',
+    scss: 'styles',
+    less: 'styles',
+    styl: 'styles',
+    json: 'data',
+    yaml: 'data',
+    yml: 'data',
+    toml: 'data',
+    java: 'java',
+    graphql: 'data',
+    sql: 'database',
+    mysql: 'database',
+    postgres: 'database',
+    postgresql: 'database',
+    sqlite: 'database',
+    py: 'python',
+    python: 'python',
+};
+
+const resolveLanguage = (className?: string) => {
+    const match = /language-([\w-]+)/.exec(className || '');
+    if (!match) return 'default';
+    const raw = match[1].toLowerCase();
+    return LANGUAGE_ALIASES[raw] ?? raw;
+};
+
+const prettifyLanguageLabel = (lang?: string) => {
+    if (!lang || lang === 'default') return 'Code';
+    return lang
+        .split(/[-_]/)
+        .filter(Boolean)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+};
+
+const escapeHtml = (str: string) =>
+    str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+const slugify = (text: string) =>
+    text
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9\u4e00-\u9fa5\s-]/g, '')
+        .replace(/\s+/g, '-'
+        )
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '') || 'section';
+
+const createSlugger = () => {
+    const counts = new Map<string, number>();
+    return (value: string) => {
+        const base = slugify(value);
+        const count = counts.get(base) || 0;
+        const id = count === 0 ? base : `${base}-${count}`;
+        counts.set(base, count + 1);
+        return id;
+    };
+};
+
+const flattenText = (children: React.ReactNode): string => {
+    if (typeof children === 'string' || typeof children === 'number') return `${children}`;
+    if (Array.isArray(children)) return children.map(flattenText).join('');
+    if (React.isValidElement(children)) {
+        const elementProps = children.props as { children?: React.ReactNode };
+        return flattenText(elementProps.children ?? '');
+    }
+    return '';
+};
+
+const stripMarkdown = (text: string): string => {
+    return text
+        .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1') // Images
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Links
+        .replace(/(\*\*|__)(.*?)\1/g, '$2') // Bold
+        .replace(/(\*|_)(.*?)\1/g, '$2') // Italic
+        .replace(/`([^`]+)`/g, '$1') // Inline code
+        .replace(/~~(.*?)~~/g, '$1'); // Strikethrough
+};
+
+type TocItem = {
+    id: string;
+    text: string;
+    level: number;
+};
+
+const buildToc = (markdown?: string): TocItem[] => {
+    if (!markdown) return [];
+    
+    // 临时移除代码块以避免匹配到代码块中的注释
+    const cleanMarkdown = markdown.replace(/```[\s\S]*?```/g, '');
+    
+    const regex = /^(#{1,3})\s+(.+)$/gm;
+    const slugger = createSlugger();
+    const toc: TocItem[] = [];
+    let match;
+    while ((match = regex.exec(cleanMarkdown)) !== null) {
+        const level = match[1].length;
+        if (level > 3) continue;
+        const rawText = match[2].trim();
+        const text = stripMarkdown(rawText);
+        const id = slugger(text);
+        // console.log('TOC Item:', text, '->', id);
+        toc.push({ id, text, level });
+    }
+    return toc;
+};
+
 // Custom Code Block component with Copy functionality
 const CodeBlock = ({ inline, className, children, node, ...props }: any) => {
     const [copied, setCopied] = useState(false);
-    const match = /language-(\w+)/.exec(className || '');
+    const languageMatch = /language-([\w-]+)/.exec(className || '');
+    const rawLanguage = languageMatch?.[1]?.toLowerCase();
+    const resolvedLanguage = resolveLanguage(className);
+    const theme = useMemo(() => {
+        if (LANGUAGE_THEMES[resolvedLanguage]) {
+            return LANGUAGE_THEMES[resolvedLanguage];
+        }
+        const dynamicLabel = prettifyLanguageLabel(rawLanguage ?? resolvedLanguage);
+        return {
+            ...BASE_LANGUAGE_THEME,
+            label: dynamicLabel,
+            icon: Code,
+        };
+    }, [resolvedLanguage, rawLanguage]);
+    const Icon = theme.icon ?? Code;
+    const displayLabel = theme.label ?? prettifyLanguageLabel(rawLanguage ?? resolvedLanguage);
     const codeContent = String(children).replace(/\n$/, '');
+    const highlightedHtml = useMemo(() => {
+        if (!codeContent) return '';
+        try {
+            if (resolvedLanguage !== 'default' && hljs.getLanguage(resolvedLanguage)) {
+                return hljs.highlight(codeContent, {
+                    language: resolvedLanguage,
+                    ignoreIllegals: true,
+                }).value;
+            }
+            return hljs.highlightAuto(codeContent).value;
+        } catch (error) {
+            console.warn('highlight.js failed to render code block', error);
+            return escapeHtml(codeContent);
+        }
+    }, [codeContent, resolvedLanguage]);
 
     // 检测是否为内联代码：无语言标记 且 不包含换行符 或 明确标记为 inline
-    const isInline = inline || (!match && !codeContent.includes('\n'));
+    const isInline = inline || (!languageMatch && !codeContent.includes('\n'));
 
     const handleCopy = () => {
         navigator.clipboard.writeText(codeContent);
@@ -363,28 +751,39 @@ const CodeBlock = ({ inline, className, children, node, ...props }: any) => {
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="relative group my-8 rounded-xl overflow-hidden border border-white/5 shadow-2xl bg-[#0b1120]"
+            className={`relative group my-8 rounded-2xl overflow-hidden border ${theme.border} ${theme.glow}`}
         >
-            <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/5">
-                <div className="flex gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-500/20" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/20" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500/20" />
+            <div className={`absolute inset-0 pointer-events-none bg-gradient-to-br ${theme.gradient} opacity-60`} />
+            <div className="relative">
+                <div className={`flex items-center justify-between px-4 py-3 ${theme.headerBg} border-b ${theme.headerBorder}`}>
+                    <div className="flex gap-1.5">
+                        {theme.dotColors.map((dotClass, idx) => (
+                            <div key={idx} className={`w-2.5 h-2.5 rounded-full ${dotClass}`} />
+                        ))}
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-mono uppercase tracking-widest ${theme.labelBg} ${theme.labelText}`}>
+                            <Icon size={14} />
+                            {displayLabel}
+                        </span>
+                        <button 
+                            onClick={handleCopy}
+                            className={`text-gray-400 transition-colors ${theme.copyHover}`}
+                            title="复制代码"
+                        >
+                            {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                        </button>
+                    </div>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="text-xs text-gray-500 font-mono uppercase">{match ? match[1] : 'text'}</div>
-                    <button 
-                        onClick={handleCopy}
-                        className="text-gray-500 hover:text-white transition-colors"
-                        title="Copy code"
-                    >
-                        {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
-                    </button>
+                <div className={`${className ?? ''} block p-6 text-sm font-mono overflow-x-auto ${theme.codeBg} ${theme.codeText}`} {...props}>
+                    <pre className="whitespace-pre break-words m-0 p-0">
+                        <code
+                            className={`hljs block text-sm font-mono leading-relaxed ${theme.codeText}`}
+                            dangerouslySetInnerHTML={{ __html: highlightedHtml || escapeHtml(codeContent) }}
+                        />
+                    </pre>
                 </div>
             </div>
-            <code className={`${className} block p-6 text-sm font-mono overflow-x-auto text-gray-300`} {...props}>
-                {children}
-            </code>
         </motion.div>
     );
 };
@@ -405,6 +804,41 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
 }) => {
   const activeFile = activeFileId ? files[activeFileId] : null;
   const contentRef = useRef<HTMLDivElement>(null);
+  // 每次渲染都创建一个新的 slugger，确保 ReactMarkdown 重新渲染时 ID 计数重置，
+  // 避免因为组件重渲染导致 ID 变成 title-1, title-2 等，从而与 TOC 不匹配
+  const renderSlugger = createSlugger();
+  
+  const tocItems = useMemo(() => {
+    return buildToc(activeFile?.content);
+  }, [activeFile?.content]);
+
+  const scrollToHeading = useCallback((id: string) => {
+    const container = contentRef.current;
+    if (!container) return;
+    
+    let target = document.getElementById(id);
+    if (!target) {
+        // Fallback for React Strict Mode double-invocation issue in dev
+        // Headings might have a -1 suffix due to double rendering consuming the slugger
+        const fallbackId = `${id}-1`;
+        target = document.getElementById(fallbackId);
+    }
+    
+    if (!target) return;
+    
+    const containerRect = container.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const offset = targetRect.top - containerRect.top + container.scrollTop - 24;
+    container.scrollTo({ top: Math.max(offset, 0), behavior: 'smooth' });
+  }, []);
+
+  const handleAnchorNavigation = useCallback((event: React.MouseEvent, id: string) => {
+    event.preventDefault();
+    scrollToHeading(id);
+  }, [scrollToHeading]);
+
+  // TOC 折叠状态
+  const [isTocOpen, setIsTocOpen] = useState(false);
   
   // Update Document Title
   useEffect(() => {
@@ -414,7 +848,7 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
       document.title = siteConfig.title;
     }
   }, [activeFile]);
-  
+
   // Scroll Progress
   const { scrollYProgress } = useScroll({ container: contentRef });
   const scaleX = useSpring(scrollYProgress, {
@@ -499,10 +933,104 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
                 <span className="text-cyan-300">{activeFile.name}</span>
             </div>
 
+            {activeFile.name.endsWith('.md') && tocItems.length > 0 && (
+              <div className="mb-12 rounded-2xl border border-white/5 bg-[#070c16]/80 p-6 shadow-2xl backdrop-blur-xl xl:hidden">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-300">
+                    <Hash size={18} />
+                  </div>
+                  <div>
+                    <p className="text-xs tracking-[0.3em] text-cyan-400/70 uppercase">Table of Contents</p>
+                    <h4 className="text-lg font-semibold text-white">当前文章目录</h4>
+                  </div>
+                </div>
+                <nav className="space-y-1">
+                  {tocItems.map(item => (
+                    <a
+                      key={item.id}
+                      href={`#${item.id}`}
+                      onClick={(e) => handleAnchorNavigation(e, item.id)}
+                      className="flex items-center gap-3 rounded-xl py-2 px-3 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+                      style={{ paddingLeft: `${(item.level - 1) * 12}px` }}
+                    >
+                      <span className="text-cyan-500/70 text-xs font-mono">{item.level === 1 ? 'H1' : item.level === 2 ? 'H2' : 'H3'}</span>
+                      <span className="truncate flex-1">{item.text}</span>
+                    </a>
+                  ))}
+                </nav>
+              </div>
+            )}
+
+            {/* 右侧悬浮 TOC - 可折叠 */}
+            {activeFile.name.endsWith('.md') && tocItems.length > 0 && (
+              <div className="hidden xl:block">
+                <div className="fixed top-32 right-6 z-40">
+                  <AnimatePresence mode="wait">
+                    {isTocOpen ? (
+                      <motion.div
+                        key="toc-panel"
+                        initial={{ opacity: 0, x: 20, scale: 0.95 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, x: 20, scale: 0.95 }}
+                        transition={{ duration: 0.2, ease: 'easeOut' }}
+                        className="w-72 rounded-2xl border border-white/5 bg-[#070c16]/95 shadow-2xl backdrop-blur-2xl"
+                      >
+                        <div 
+                          className="flex items-center justify-between px-5 py-4 border-b border-white/5 cursor-pointer hover:bg-white/5 transition-colors"
+                          onClick={() => setIsTocOpen(false)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-300">
+                              <List size={18} />
+                            </div>
+                            <div>
+                              <p className="text-[11px] tracking-[0.4em] text-cyan-400/70 uppercase">TOC</p>
+                              <h4 className="text-base font-semibold text-white">文章导航</h4>
+                            </div>
+                          </div>
+                          <PanelRightClose size={16} className="text-gray-500 hover:text-white transition-colors" />
+                        </div>
+                        <nav className="max-h-[60vh] overflow-y-auto px-3 py-2 space-y-1 custom-scrollbar">
+                          {tocItems.map(item => (
+                            <button
+                              key={item.id}
+                              onClick={(e) => {
+                                handleAnchorNavigation(e, item.id);
+                              }}
+                              className="w-full flex items-center gap-3 rounded-xl py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-all text-left"
+                              style={{ paddingLeft: `${(item.level - 1) * 14}px` }}
+                            >
+                              <span className="text-cyan-500/70 text-[11px] font-mono uppercase tracking-widest w-8 shrink-0">
+                                {item.level === 1 ? 'H1' : item.level === 2 ? 'H2' : 'H3'}
+                              </span>
+                              <span className="truncate flex-1">{item.text}</span>
+                            </button>
+                          ))}
+                        </nav>
+                      </motion.div>
+                    ) : (
+                      <motion.button
+                        key="toc-trigger"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setIsTocOpen(true)}
+                        className="w-12 h-12 rounded-xl bg-[#070c16]/90 border border-white/10 shadow-lg backdrop-blur-xl flex items-center justify-center text-cyan-400 hover:text-cyan-300 hover:border-cyan-500/30 hover:shadow-[0_0_20px_rgba(6,182,212,0.15)] transition-all"
+                        title="展开目录导航"
+                      >
+                        <List size={20} />
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            )}
+
             {activeFile.name.endsWith('.md') ? (
               <div className="prose prose-invert prose-lg max-w-none 
                 prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-gray-100
-                prose-h1:text-4xl prose-h1:mb-8 prose-h1:bg-clip-text prose-h1:text-transparent prose-h1:bg-gradient-to-r prose-h1:from-white prose-h1:to-slate-400
                 prose-h2:text-2xl prose-h2:text-cyan-100 prose-h2:border-b prose-h2:border-white/10 prose-h2:pb-2 prose-h2:mt-12
                 prose-h3:text-xl prose-h3:text-cyan-50 prose-h3:mt-8
                 prose-p:text-slate-400 prose-p:leading-relaxed
@@ -517,6 +1045,71 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
                   remarkPlugins={[remarkGfm]}
                   rehypePlugins={[rehypeRaw]}
                   components={{
+                    h1: ({ node, children, className, ...props }: any) => {
+                      const text = flattenText(children);
+                      const id = renderSlugger(text || 'section');
+                      // console.log('Render H1:', text, '->', id);
+                      return (
+                        <div className="relative mb-14 group">
+                          <h1
+                            {...props}
+                            id={id}
+                            className={`relative inline-flex items-center gap-3 text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white bg-clip-text text-transparent bg-gradient-to-r from-white via-cyan-100 to-cyan-500 drop-shadow-[0_12px_40px_rgba(34,211,238,0.35)] ${className ?? ''}`}
+                          >
+                            <span
+                              onClick={(e) => handleAnchorNavigation(e, id)}
+                              className="flex items-center gap-3 cursor-pointer"
+                            >
+                              <span className="text-cyan-400/0 group-hover:text-cyan-300 transition-colors">
+                                <Hash className="opacity-0 group-hover:opacity-100" size={18} />
+                              </span>
+                              <span>{children}</span>
+                            </span>
+                          </h1>
+                          <div className="mt-6 h-[3px] w-28 rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-transparent shadow-[0_0_25px_rgba(14,165,233,0.45)]" />
+                        </div>
+                      );
+                    },
+                    h2: ({ node, children, className, ...props }: any) => {
+                      const text = flattenText(children);
+                      const id = renderSlugger(text || 'section');
+                      return (
+                        <h2
+                          {...props}
+                          id={id}
+                          className={`group flex items-center gap-3 text-2xl font-bold tracking-tight text-cyan-50 border-b border-white/10 pb-2 mt-12 ${className ?? ''}`}
+                        >
+                          <span
+                            onClick={(e) => handleAnchorNavigation(e, id)}
+                            className="flex items-center gap-3 cursor-pointer"
+                          >
+                            <span className="text-cyan-400/60 group-hover:text-cyan-300 transition-colors">
+                              <Hash size={16} />
+                            </span>
+                            <span>{children}</span>
+                          </span>
+                        </h2>
+                      );
+                    },
+                    h3: ({ node, children, className, ...props }: any) => {
+                      const text = flattenText(children);
+                      const id = renderSlugger(text || 'section');
+                      return (
+                        <h3
+                          {...props}
+                          id={id}
+                          className={`group flex items-center gap-2 text-xl font-semibold text-cyan-100 mt-8 ${className ?? ''}`}
+                        >
+                          <span
+                            onClick={(e) => handleAnchorNavigation(e, id)}
+                            className="flex items-center gap-2 cursor-pointer"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-500/70 group-hover:bg-cyan-300 transition-colors" />
+                            <span>{children}</span>
+                          </span>
+                        </h3>
+                      );
+                    },
                     code: CodeBlock,
                     // Fix: Use div instead of p to avoid hydration errors when block elements are nested
                     p: ({node, ...props}) => <div className="mb-4 leading-relaxed text-slate-400" {...props} />,
@@ -524,7 +1117,27 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
                         <blockquote className="border-l-4 border-cyan-500 pl-6 italic text-gray-400 bg-cyan-900/10 py-4 pr-4 my-8 rounded-r-lg" {...props} />
                     ),
                     ul: ({node, ...props}) => <ul className="list-disc list-outside ml-4 space-y-2 mb-6" {...props} />,
-                    li: ({node, ...props}) => <li className="text-slate-300 pl-2 marker:text-cyan-500" {...props} />
+                    li: ({node, ...props}) => <li className="text-slate-300 pl-2 marker:text-cyan-500" {...props} />,
+                    table: ({node, ...props}) => (
+                      <div className="my-10 overflow-x-auto rounded-2xl border border-white/10 shadow-xl bg-[#050b16]">
+                        <table className="min-w-full text-left text-sm" {...props} />
+                      </div>
+                    ),
+                    thead: ({node, ...props}) => (
+                      <thead className="uppercase tracking-[0.3em] text-xs text-cyan-200 bg-white/5" {...props} />
+                    ),
+                    tbody: ({node, ...props}) => (
+                      <tbody className="divide-y divide-white/10" {...props} />
+                    ),
+                    tr: ({node, ...props}) => (
+                      <tr className="hover:bg-white/5 transition-colors" {...props} />
+                    ),
+                    th: ({node, ...props}) => (
+                      <th className="px-4 py-3 font-semibold text-sm" {...props} />
+                    ),
+                    td: ({node, ...props}) => (
+                      <td className="px-4 py-3 text-slate-300" {...props} />
+                    )
                   }}
                 >
                   {activeFile.content || ''}
