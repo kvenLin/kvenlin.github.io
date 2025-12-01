@@ -8,9 +8,13 @@ import { EditorArea } from './components/EditorArea';
 import { Terminal } from './components/Terminal';
 import { CommandPalette } from './components/CommandPalette';
 import { BootSequence } from './components/BootSequence';
-import { TerminalSquare, Menu, ArrowUp, ArrowDown, Moon, Sun, LayoutGrid } from 'lucide-react';
+import { TerminalSquare, Menu, ArrowUp, ArrowDown, Moon, Sun, LayoutGrid, ChevronLeft } from 'lucide-react';
 import { Language, translations } from './translations';
 import { loadPosts, loadSingleFile } from './utils/postLoader';
+
+const SIDEBAR_MIN_WIDTH = 240;
+const SIDEBAR_MAX_WIDTH = 480;
+const SIDEBAR_DEFAULT_WIDTH = 300;
 
 function App() {
   const [fileSystem, setFileSystem] = useState<FileSystem>(INITIAL_FILE_SYSTEM);
@@ -26,9 +30,17 @@ function App() {
       return (localStorage.getItem('theme') as Theme) || 'dark';
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Default to closed
+  const [sidebarWidth, setSidebarWidth] = useState<number>(SIDEBAR_DEFAULT_WIDTH);
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+  const [isNearLeftEdge, setIsNearLeftEdge] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  
+  const sidebarResizeState = useRef({ startX: 0, startWidth: SIDEBAR_DEFAULT_WIDTH });
+
   const t = translations[language];
+
+  const clampSidebarWidth = useCallback((value: number) => {
+    return Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, value));
+  }, []);
 
   // Persist theme
   useEffect(() => {
@@ -84,17 +96,46 @@ function App() {
     fetchData();
   }, []);
 
-  // Global Mouse Tracking for Spotlight Effect
+  // Restore sidebar width preference
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const storedWidth = localStorage.getItem('sidebarWidth');
+    if (storedWidth) {
+      const parsed = Number(storedWidth);
+      if (!Number.isNaN(parsed)) {
+        setSidebarWidth(clampSidebarWidth(parsed));
+      }
+    }
+  }, [clampSidebarWidth]);
+
+  // Persist sidebar width
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('sidebarWidth', String(sidebarWidth));
+  }, [sidebarWidth]);
+
+  // Global Mouse Tracking for Spotlight Effect & Edge Detection
   useEffect(() => {
     let rafId: number | null = null;
     let mouseX = 0;
     let mouseY = 0;
+
+    const EDGE_THRESHOLD = 60; // 距离左边缘的阈值（像素）
 
     const updateMousePosition = () => {
         if (containerRef.current) {
             containerRef.current.style.setProperty('--mouse-x', `${mouseX}px`);
             containerRef.current.style.setProperty('--mouse-y', `${mouseY}px`);
         }
+        
+        // 检测鼠标是否靠近左侧边缘（只在侧边栏打开时有效）
+        if (isSidebarOpen) {
+            const nearEdge = mouseX <= sidebarWidth + EDGE_THRESHOLD && mouseX >= sidebarWidth - 20;
+            setIsNearLeftEdge(nearEdge);
+        } else {
+            setIsNearLeftEdge(false);
+        }
+        
         rafId = null;
     };
 
@@ -114,7 +155,7 @@ function App() {
             cancelAnimationFrame(rafId);
         }
     };
-  }, []);
+  }, [isSidebarOpen, sidebarWidth]);
 
   // Keyboard Shortcuts (Including ESC handling)
   useEffect(() => {
@@ -158,6 +199,37 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isPaletteOpen, isTerminalOpen, activeTag, activeFileId]);
 
+  // Sidebar resize listeners
+  useEffect(() => {
+    if (!isResizingSidebar) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      e.preventDefault();
+      const delta = e.clientX - sidebarResizeState.current.startX;
+      const nextWidth = clampSidebarWidth(sidebarResizeState.current.startWidth + delta);
+      setSidebarWidth(nextWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingSidebar(false);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    const previousCursor = document.body.style.cursor;
+    const previousUserSelect = document.body.style.userSelect;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = previousCursor;
+      document.body.style.userSelect = previousUserSelect;
+    };
+  }, [clampSidebarWidth, isResizingSidebar]);
+
   // Toggle folder expansion
   const handleToggleFolder = useCallback((folderId: string) => {
     setFileSystem(prev => ({
@@ -194,6 +266,16 @@ function App() {
         setIsSidebarOpen(true);
     }
   }, []);
+
+  const handleSidebarResizeStart = useCallback((e: React.MouseEvent) => {
+    if (!isSidebarOpen) return;
+    e.preventDefault();
+    sidebarResizeState.current = {
+      startX: e.clientX,
+      startWidth: sidebarWidth,
+    };
+    setIsResizingSidebar(true);
+  }, [isSidebarOpen, sidebarWidth]);
 
   // Handle tab click
   const handleTabClick = useCallback((fileId: string) => {
@@ -255,18 +337,19 @@ function App() {
       <motion.div 
          initial={false}
          animate={{ 
-            width: isSidebarOpen ? 300 : 0, 
+            width: isSidebarOpen ? sidebarWidth : 0, 
             opacity: isSidebarOpen ? 1 : 0,
             marginRight: isSidebarOpen ? 0 : -20 // Slightly pull content to avoid jump
          }}
-         transition={{ 
-            duration: 0.4, 
-            ease: [0.4, 0, 0.2, 1] // Smooth cubic-bezier
-         }}
+         transition={isResizingSidebar
+            ? { duration: 0, ease: 'linear' }
+            : { duration: 0.4, ease: [0.4, 0, 0.2, 1] } // Smooth cubic-bezier
+         }
          className="z-20 h-full py-4 pl-4 hidden md:flex flex-col overflow-hidden whitespace-nowrap relative"
       >
         <motion.div 
-            className="flex-1 glass-panel rounded-2xl overflow-hidden flex flex-col shadow-2xl relative border-white/5 min-w-[300px]"
+            className="flex-1 glass-panel rounded-2xl overflow-hidden flex flex-col shadow-2xl relative border-white/5"
+            style={{ minWidth: SIDEBAR_MIN_WIDTH }}
         >
             <FileExplorer 
                 files={fileSystem}
@@ -292,6 +375,18 @@ function App() {
                 </div>
             </div>
         </motion.div>
+
+        {isSidebarOpen && (
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="调整侧边栏宽度"
+            className={`absolute top-4 bottom-4 right-0 w-1 cursor-col-resize transition-colors duration-200 ${
+              isResizingSidebar ? 'bg-cyan-400/80 shadow-[0_0_10px_rgba(34,211,238,0.6)]' : 'bg-white/10 hover:bg-white/40'
+            }`}
+            onMouseDown={handleSidebarResizeStart}
+          />
+        )}
       </motion.div>
       
       {/* Sidebar Toggle for when closed */}
@@ -305,6 +400,30 @@ function App() {
             <Menu size={20} />
         </motion.button>
       )}
+
+      {/* 吸附式侧边栏收缩按钮 - 当鼠标靠近侧边栏边缘时显示 */}
+      <AnimatePresence>
+        {isSidebarOpen && isNearLeftEdge && !isResizingSidebar && (
+          <motion.button
+            initial={{ x: -20, opacity: 0, scale: 0.8 }}
+            animate={{ x: 0, opacity: 1, scale: 1 }}
+            exit={{ x: -20, opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed z-50 p-2 bg-black/60 border border-cyan-500/50 rounded-full text-cyan-400 hover:text-white hover:bg-cyan-500/20 hover:border-cyan-400 backdrop-blur-md transition-colors shadow-lg shadow-cyan-500/20"
+            style={{
+              left: sidebarWidth + 8,
+              top: '50%',
+              transform: 'translateY(-50%)'
+            }}
+            title="收起侧边栏 (Ctrl+B)"
+          >
+            <ChevronLeft size={18} />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* Main Content Area */}
       <div className="flex-1 z-10 flex flex-col min-w-0 h-full p-4 relative">

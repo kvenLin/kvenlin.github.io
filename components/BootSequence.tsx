@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { siteConfig } from '../src/config/site';
 
 interface BootSequenceProps {
   onComplete: () => void;
@@ -46,7 +47,7 @@ export const BootSequence: React.FC<BootSequenceProps> = ({ onComplete }) => {
     >
       <div className="w-full max-w-lg">
         <div className="border-b-2 border-cyan-500 mb-4 pb-2 flex justify-between items-end">
-            <span className="text-xl font-bold">DEV.OS BIOS v2.0.4</span>
+            <span className="text-xl font-bold">DEV.OS BIOS v{siteConfig.build.version}</span>
             <span className="text-xs animate-pulse">BOOTING</span>
         </div>
         <div className="space-y-2 text-sm md:text-base">
