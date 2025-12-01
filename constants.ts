@@ -1,5 +1,6 @@
 
 import { FileSystem, FileType } from './types';
+import packageJson from './package.json';
 
 export const INITIAL_FILE_SYSTEM: FileSystem = {
   'root': {
@@ -65,18 +66,7 @@ Reading system documentation...
     parentId: 'root',
     tags: ['config'],
     content: `\`\`\`json
-{
-  "name": "developer-brain-dump",
-  "version": "2.0.4",
-  "description": "Thoughts compiled into code",
-  "author": "Senior Engineer",
-  "license": "MIT",
-  "dependencies": {
-    "coffee": "^2.0.0",
-    "music": "latest",
-    "sleep": "beta-feature"
-  }
-}
+${JSON.stringify(packageJson, null, 2)}
 \`\`\``
   },
   'file-resume': {
@@ -109,7 +99,6 @@ Reading system documentation...
     tags: ['wip'],
     content: `
 - [ ] 用 WASM 构建一个复古游戏模拟器
-- [ ] 写一篇关于 Gemini API 的博客
 - [x] 重构博客以看起来像一个 IDE
 - [x] 添加中文语言支持
 `

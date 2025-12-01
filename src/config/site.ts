@@ -49,8 +49,8 @@ export const siteConfig: SiteMetadata = {
     ]
   },
   build: {
-    timestamp: new Date().toISOString(),
-    version: "2.1.0",
+    timestamp: __BUILD_TIME__,
+    version: __APP_VERSION__,
     node_version: "20.x"
   },
   author: {
