@@ -8,6 +8,7 @@ import { EditorArea } from './components/EditorArea';
 import { Terminal } from './components/Terminal';
 import { CommandPalette } from './components/CommandPalette';
 import { BootSequence } from './components/BootSequence';
+import { Background } from './components/Background';
 import { TerminalSquare, Menu, ArrowUp, ArrowDown, Moon, Sun, LayoutGrid, ChevronLeft } from 'lucide-react';
 import { Language, translations } from './translations';
 import { loadPosts, loadSingleFile } from './utils/postLoader';
@@ -315,10 +316,7 @@ function App() {
       <div className="bg-noise" />
       
       {/* Background Ambience */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-500/5 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-cyan-500/5 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s'}} />
-      </div>
+      <Background theme={theme} />
 
       <AnimatePresence>
         {isPaletteOpen && (
