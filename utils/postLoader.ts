@@ -31,24 +31,62 @@ const parseFrontMatter = (fileContent: string): ParsedPost => {
   const content = match[2];
   const metadata: PostMetadata = { title: '', date: '' };
 
-  yamlBlock.split('\n').forEach(line => {
-    const colonIndex = line.indexOf(':');
+  let currentKey: string | null = null;
+  let pendingArray: string[] | null = null;
+
+  const flushArray = () => {
+    if (currentKey && pendingArray) {
+      (metadata as any)[currentKey] = pendingArray;
+      pendingArray = null;
+    }
+  };
+
+  yamlBlock.split('\n').forEach(rawLine => {
+    const line = rawLine.replace(/\r$/, '');
+    const trimmed = line.trim();
+    if (!trimmed) return;
+
+    const arrayItemMatch = trimmed.match(/^-(.+)$/);
+    if (arrayItemMatch && currentKey) {
+      if (!pendingArray) pendingArray = [];
+      pendingArray.push(arrayItemMatch[1].trim());
+      return;
+    }
+
+    const colonIndex = trimmed.indexOf(':');
     if (colonIndex !== -1) {
-      const key = line.slice(0, colonIndex).trim();
-      let value = line.slice(colonIndex + 1).trim();
+      flushArray();
+      const key = trimmed.slice(0, colonIndex).trim();
+      let value = trimmed.slice(colonIndex + 1).trim();
+      currentKey = key;
+
+      if (!value) {
+        pendingArray = [];
+        return;
+      }
 
       // Handle arrays (simple [a, b] format)
       if (value.startsWith('[') && value.endsWith(']')) {
         const arrayValues = value
-            .slice(1, -1)
-            .split(',')
-            .map(v => v.trim());
+          .slice(1, -1)
+          .split(',')
+          .map(v => v.trim())
+          .filter(Boolean);
         (metadata as any)[key] = arrayValues;
-      } else {
-        (metadata as any)[key] = value;
+        return;
       }
+
+      // Strip wrapping quotes if present
+      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith('\'') && value.endsWith('\''))) {
+        value = value.slice(1, -1);
+      }
+
+      (metadata as any)[key] = value;
+      currentKey = null;
     }
   });
+
+  flushArray();
 
   return { metadata, content, filename: '' };
 };
