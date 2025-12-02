@@ -278,8 +278,42 @@ const LANGUAGE_ALIASES: Record<string, string> = {
 const resolveLanguage = (className?: string) => {
   const match = /language-([\w-]+)/.exec(className || '');
   if (!match) return 'default';
-  const raw = match[1].toLowerCase();
-  return LANGUAGE_ALIASES[raw] ?? raw;
+  const [, lang] = match;
+  return LANGUAGE_ALIASES[lang.toLowerCase()] || lang.toLowerCase();
+};
+
+const flattenInlineCodeText = (node: React.ReactNode): string => {
+  if (typeof node === 'string' || typeof node === 'number') {
+    return String(node);
+  }
+  if (Array.isArray(node)) {
+    return node.map(flattenInlineCodeText).join('');
+  }
+  if (React.isValidElement(node)) {
+    const elementProps = node.props as { children?: React.ReactNode };
+    return flattenInlineCodeText(elementProps.children ?? '');
+  }
+  return '';
+};
+
+const renderInlineBoldSegments = (text: string): React.ReactNode => {
+  if (!/\*\*.+?\*\*/.test(text)) {
+    return text;
+  }
+
+  const segments = text.split(/(\*\*.+?\*\*)/g).filter(Boolean);
+
+  return segments.map((segment, index) => {
+    const boldMatch = segment.match(/^\*\*(.+?)\*\*$/);
+    if (boldMatch) {
+      return (
+        <strong key={`inline-bold-${index}`} className="text-white font-semibold">
+          {boldMatch[1]}
+        </strong>
+      );
+    }
+    return <React.Fragment key={`inline-text-${index}`}>{segment}</React.Fragment>;
+  });
 };
 
 const prettifyLanguageLabel = (lang?: string) => {
@@ -346,9 +380,12 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ inline, className, childre
   };
 
   if (isInline) {
+    const inlineTextContent = flattenInlineCodeText(children);
+    const inlineDisplay = inlineTextContent ? renderInlineBoldSegments(inlineTextContent) : children;
+
     return (
       <code className="text-cyan-300 bg-cyan-950/30 px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
-        {children}
+        {inlineDisplay}
       </code>
     );
   }
