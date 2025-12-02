@@ -21,7 +21,7 @@ import pythonLang from 'highlight.js/lib/languages/python';
 import graphql from 'highlight.js/lib/languages/graphql';
 import markdownLang from 'highlight.js/lib/languages/markdown';
 import 'highlight.js/styles/github-dark.css';
-import { type LucideIcon, X, Clock, GitCommit, Activity, Hash, ArrowRight, Code, Copy, Check, Cpu, Power, Lock, FolderOpen, ChevronUp, ChevronDown, Folder, LayoutGrid, FileText, Terminal, Braces, Palette, Globe, Database, Bug, List, PanelRightClose } from 'lucide-react';
+import { type LucideIcon, X, Clock, GitCommit, Activity, Hash, ArrowRight, ArrowLeft, Code, Copy, Check, Cpu, Power, Lock, FolderOpen, ChevronUp, ChevronDown, Folder, LayoutGrid, FileText, Terminal, Braces, Palette, Globe, Database, Bug, List, PanelRightClose, ZoomIn, ZoomOut, RotateCcw, Download } from 'lucide-react';
 import { FileSystemItem, Theme } from '../types';
 import { IconHelper } from './IconHelper';
 import { GlitchText } from './GlitchText';
@@ -666,6 +666,29 @@ type TocItem = {
     level: number;
 };
 
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+const PREVIEW_DEFAULT_ZOOM = 1;
+const PREVIEW_MIN_ZOOM = 0.5;
+const PREVIEW_MAX_ZOOM = 3.5;
+const PREVIEW_ZOOM_STEP = 0.2;
+
+type ImageEntry = {
+    id: string;
+    originalSrc: string;
+    resolvedSrc: string;
+    alt?: string;
+};
+
+type PreviewState = {
+    images: ImageEntry[];
+    index: number;
+    zoom: number;
+    offset: {
+        x: number;
+        y: number;
+    };
+};
+
 const buildToc = (markdown?: string): TocItem[] => {
     if (!markdown) return [];
     
@@ -804,6 +827,9 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
 }) => {
   const activeFile = activeFileId ? files[activeFileId] : null;
   const contentRef = useRef<HTMLDivElement>(null);
+  const imageEntriesRef = useRef<ImageEntry[]>([]);
+  const imageIdCounterRef = useRef(0);
+  const panStateRef = useRef<{ pointerId: number; startX: number; startY: number; offsetX: number; offsetY: number } | null>(null);
   // 每次渲染都创建一个新的 slugger，确保 ReactMarkdown 重新渲染时 ID 计数重置，
   // 避免因为组件重渲染导致 ID 变成 title-1, title-2 等，从而与 TOC 不匹配
   const renderSlugger = createSlugger();
@@ -811,6 +837,35 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
   const tocItems = useMemo(() => {
     return buildToc(activeFile?.content);
   }, [activeFile?.content]);
+
+  // Reset image registry for each render so we can rebuild during markdown rendering
+  imageEntriesRef.current = [];
+  imageIdCounterRef.current = 0;
+
+  const resolveImageSrc = useCallback((src: string) => {
+    let resolved = src || '';
+    const isExternal = resolved.startsWith('http') || resolved.startsWith('//');
+    if (!isExternal && resolved && !resolved.startsWith('/')) {
+      if (activeFile?.parentId === 'folder-posts') {
+        resolved = `/posts/${resolved}`;
+      } else {
+        resolved = `/${resolved}`;
+      }
+    }
+    return resolved;
+  }, [activeFile?.parentId]);
+
+  const registerImage = useCallback((originalSrc: string, resolvedSrc: string, alt?: string) => {
+    const id = `preview-image-${imageIdCounterRef.current++}`;
+    const entry: ImageEntry = {
+      id,
+      originalSrc,
+      resolvedSrc,
+      alt
+    };
+    imageEntriesRef.current.push(entry);
+    return entry;
+  }, []);
 
   const scrollToHeading = useCallback((id: string) => {
     const container = contentRef.current;
@@ -839,7 +894,102 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
 
   // TOC 折叠状态
   const [isTocOpen, setIsTocOpen] = useState(true);
-  
+  const [previewState, setPreviewState] = useState<PreviewState | null>(null);
+
+  const openImagePreview = useCallback((images: ImageEntry[], targetId: string) => {
+    if (!images.length) return;
+    const index = images.findIndex(img => img.id === targetId);
+    setPreviewState({
+      images,
+      index: index === -1 ? 0 : index,
+      zoom: PREVIEW_DEFAULT_ZOOM,
+      offset: { x: 0, y: 0 }
+    });
+  }, []);
+
+  const closeImagePreview = useCallback(() => setPreviewState(null), []);
+
+  const handleNavigate = useCallback((direction: 1 | -1) => {
+    setPreviewState(prev => {
+      if (!prev || prev.images.length <= 1) return prev;
+      const total = prev.images.length;
+      const nextIndex = (prev.index + direction + total) % total;
+      return {
+        ...prev,
+        index: nextIndex,
+        zoom: PREVIEW_DEFAULT_ZOOM,
+        offset: { x: 0, y: 0 }
+      };
+    });
+  }, []);
+
+  const adjustZoom = useCallback((delta: number) => {
+    setPreviewState(prev => {
+      if (!prev) return prev;
+      const nextZoom = clamp(prev.zoom + delta, PREVIEW_MIN_ZOOM, PREVIEW_MAX_ZOOM);
+      return { ...prev, zoom: nextZoom };
+    });
+  }, []);
+
+  const resetView = useCallback(() => {
+    setPreviewState(prev => (prev ? { ...prev, zoom: PREVIEW_DEFAULT_ZOOM, offset: { x: 0, y: 0 } } : prev));
+  }, []);
+
+  const handleDownload = useCallback(() => {
+    if (!previewState) return;
+    const current = previewState.images[previewState.index];
+    if (!current) return;
+    const link = document.createElement('a');
+    link.href = current.resolvedSrc || current.originalSrc;
+    const filename = (current.alt?.trim() || 'image').replace(/[\\/:*?"<>|]+/g, '_');
+    link.download = filename;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [previewState]);
+
+  const handlePointerDown = useCallback((event: React.PointerEvent<HTMLImageElement>) => {
+    if (!previewState) return;
+    if (event.button && event.button !== 0) return;
+    event.preventDefault();
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    panStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      offsetX: previewState.offset.x,
+      offsetY: previewState.offset.y
+    };
+  }, [previewState]);
+
+  const handlePointerMove = useCallback((event: React.PointerEvent<HTMLImageElement>) => {
+    const panState = panStateRef.current;
+    if (!panState || panState.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    const dx = event.clientX - panState.startX;
+    const dy = event.clientY - panState.startY;
+    setPreviewState(prev => (prev ? { ...prev, offset: { x: panState.offsetX + dx, y: panState.offsetY + dy } } : prev));
+  }, []);
+
+  const handlePointerUp = useCallback((event: React.PointerEvent<HTMLImageElement>) => {
+    const panState = panStateRef.current;
+    if (!panState || panState.pointerId !== event.pointerId) return;
+    (event.currentTarget as HTMLElement).releasePointerCapture(event.pointerId);
+    panStateRef.current = null;
+  }, []);
+
+  const handleWheelZoom = useCallback((event: React.WheelEvent<HTMLDivElement>) => {
+    if (!previewState) return;
+    event.preventDefault();
+    const delta = event.deltaY > 0 ? -PREVIEW_ZOOM_STEP : PREVIEW_ZOOM_STEP;
+    setPreviewState(prev => {
+      if (!prev) return prev;
+      const nextZoom = clamp(prev.zoom + delta, PREVIEW_MIN_ZOOM, PREVIEW_MAX_ZOOM);
+      return { ...prev, zoom: nextZoom };
+    });
+  }, [previewState]);
+
   // Update Document Title
   useEffect(() => {
     if (activeFile) {
@@ -848,6 +998,36 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
       document.title = siteConfig.title;
     }
   }, [activeFile]);
+
+  useEffect(() => {
+    if (!previewState) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        closeImagePreview();
+      } else if (event.key === 'ArrowLeft') {
+        handleNavigate(-1);
+      } else if (event.key === 'ArrowRight') {
+        handleNavigate(1);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [previewState, closeImagePreview, handleNavigate]);
+
+  useEffect(() => {
+    if (!previewState) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [previewState]);
+
+  useEffect(() => {
+    setPreviewState(null);
+    imageEntriesRef.current = [];
+    imageIdCounterRef.current = 0;
+  }, [activeFileId]);
 
   // Scroll Progress
   const { scrollYProgress } = useScroll({ container: contentRef });
@@ -1113,6 +1293,34 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
                     code: CodeBlock,
                     // Fix: Use div instead of p to avoid hydration errors when block elements are nested
                     p: ({node, ...props}) => <div className="mb-4 leading-relaxed text-slate-400" {...props} />,
+                    img: ({node, ...props}) => {
+                        const {
+                            src: originalSrc = '',
+                            alt,
+                            ...rest
+                        } = props as React.ImgHTMLAttributes<HTMLImageElement>;
+                        const resolvedSrc = resolveImageSrc(originalSrc);
+                        const entry = registerImage(originalSrc, resolvedSrc, alt);
+
+                        return (
+                            <figure className="my-8 flex flex-col items-center gap-3">
+                                <img 
+                                    {...rest} 
+                                    src={resolvedSrc}
+                                    alt={alt}
+                                    referrerPolicy="no-referrer" 
+                                    data-preview-id={entry.id}
+                                    className="rounded-lg shadow-lg border border-white/10 max-w-full h-auto cursor-zoom-in transition-transform duration-300 hover:scale-[1.01]" 
+                                    onClick={() => openImagePreview([...imageEntriesRef.current], entry.id)}
+                                />
+                                {alt && (
+                                    <figcaption className="text-sm text-slate-400/80 font-mono tracking-wide">
+                                        {alt}
+                                    </figcaption>
+                                )}
+                            </figure>
+                        );
+                    },
                     blockquote: ({node, ...props}) => (
                         <blockquote className="border-l-4 border-cyan-500 pl-6 italic text-gray-400 bg-cyan-900/10 py-4 pr-4 my-8 rounded-r-lg" {...props} />
                     ),
@@ -1176,6 +1384,126 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
         )}
         </AnimatePresence>
       </div>
+
+      <AnimatePresence>
+        {previewState && (
+          <motion.div
+            key="image-preview"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-4"
+            onWheel={handleWheelZoom}
+          >
+            <button
+              onClick={closeImagePreview}
+              className="absolute top-6 right-6 p-2 rounded-full bg-white/10 text-gray-200 hover:text-white hover:bg-white/20 transition-all"
+              aria-label="关闭预览"
+            >
+              <X size={20} />
+            </button>
+
+            {previewState.images.length > 1 && (
+              <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-between px-6 pointer-events-none">
+                <button
+                  onClick={() => handleNavigate(-1)}
+                  className="pointer-events-auto p-3 rounded-full bg-black/60 text-gray-200 hover:text-white hover:bg-white/10 border border-white/10 transition-colors"
+                  aria-label="上一张"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+                <button
+                  onClick={() => handleNavigate(1)}
+                  className="pointer-events-auto p-3 rounded-full bg-black/60 text-gray-200 hover:text-white hover:bg-white/10 border border-white/10 transition-colors"
+                  aria-label="下一张"
+                >
+                  <ArrowRight size={20} />
+                </button>
+              </div>
+            )}
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+              className="relative max-w-6xl w-full"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="absolute -top-14 left-1/2 -translate-x-1/2 flex items-center gap-2 text-xs text-gray-300 font-mono">
+                <span>{previewState.index + 1} / {previewState.images.length}</span>
+              </div>
+              <div className="rounded-2xl border border-white/20 bg-black/60 shadow-2xl overflow-hidden flex flex-col">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/30 text-sm text-gray-200">
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => adjustZoom(PREVIEW_ZOOM_STEP)} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors" aria-label="放大">
+                      <ZoomIn size={18} />
+                    </button>
+                    <button onClick={() => adjustZoom(-PREVIEW_ZOOM_STEP)} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors" aria-label="缩小">
+                      <ZoomOut size={18} />
+                    </button>
+                    <button onClick={resetView} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors" aria-label="重置视图">
+                      <RotateCcw size={18} />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={handleDownload} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors" aria-label="下载图片">
+                      <Download size={18} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="relative flex-1 min-h-[60vh] flex items-center justify-center bg-black/80">
+                  {previewState.images.map((img, idx) => (
+                    <AnimatePresence key={img.id}>
+                      {idx === previewState.index && (
+                        <motion.img
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          src={img.resolvedSrc}
+                          alt={img.alt}
+                          referrerPolicy="no-referrer"
+                          onPointerDown={handlePointerDown}
+                          onPointerMove={handlePointerMove}
+                          onPointerUp={handlePointerUp}
+                          onPointerCancel={handlePointerUp}
+                          style={{
+                            transform: `scale(${previewState.zoom}) translate(${previewState.offset.x / previewState.zoom}px, ${previewState.offset.y / previewState.zoom}px)`
+                          }}
+                          className="max-h-[70vh] w-auto object-contain select-none cursor-grab active:cursor-grabbing"
+                        />
+                      )}
+                    </AnimatePresence>
+                  ))}
+                </div>
+
+                {previewState.images.length > 1 && (
+                  <div className="px-4 py-3 border-t border-white/10 bg-black/30 flex items-center gap-2 overflow-x-auto">
+                    {previewState.images.map((img, idx) => (
+                      <button
+                        key={img.id}
+                        onClick={() => setPreviewState(prev => prev ? { ...prev, index: idx, zoom: PREVIEW_DEFAULT_ZOOM, offset: { x: 0, y: 0 } } : prev)}
+                        className={`relative w-16 h-16 rounded-lg border ${idx === previewState.index ? 'border-cyan-400' : 'border-white/10'} overflow-hidden flex-shrink-0`}
+                      >
+                        <img src={img.resolvedSrc} alt={img.alt} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        {idx === previewState.index && <span className="absolute inset-0 border-2 border-cyan-400 rounded-lg" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {previewState.images[previewState.index]?.alt && (
+                <p className="mt-4 text-center text-sm text-gray-300 tracking-wide">
+                  {previewState.images[previewState.index]?.alt}
+                </p>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
