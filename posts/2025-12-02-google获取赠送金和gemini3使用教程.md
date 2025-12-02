@@ -72,7 +72,7 @@ aistudio类似一个实验室, 支持开发各种api的组合应用, 可以最�
 
 开发完成可以push到github, 也可以直接部署到Google cloud
 
-![alt text](ceni-script.gif)
+![alt text](https://kvenlin.github.io/img/ceni-script.gif)
 
 
 

@@ -5,6 +5,7 @@ import { FileSystemItem } from '../../types';
 import { Language, translations } from '../../translations';
 import { siteConfig } from '../../src/config/site';
 import { IconHelper } from '../IconHelper';
+import { getDisplayTitle } from '../../utils/titleFormatter';
 
 interface DashboardProps {
   files: Record<string, FileSystemItem>;
@@ -234,7 +235,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFil
                   <div className="flex items-center justify-between mb-3 relative z-10">
                     <div className="flex items-center gap-3">
                       <IconHelper name={post.name} className="group-hover:text-cyan-300 transition-colors" />
-                      <span className="text-gray-200 font-bold group-hover:text-cyan-300 transition-colors text-lg tracking-tight truncate max-w-[200px]">{post.name}</span>
+                      <span className="text-gray-200 font-bold group-hover:text-cyan-300 transition-colors text-lg tracking-tight truncate max-w-[200px]">{getDisplayTitle(post.name)}</span>
                     </div>
                     <span className="text-xs text-gray-500 font-mono bg-black/20 px-2.5 py-1 rounded-md border border-white/5 flex-shrink-0">{post.date}</span>
                   </div>

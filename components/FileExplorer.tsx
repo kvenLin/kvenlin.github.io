@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronDown, X, Search, ChevronLeft, Menu, Folder, Hash, ChevronUp, FileText } from 'lucide-react';
 import { FileSystem, FileSystemItem, FileType, Theme } from '../types';
 import { IconHelper } from './IconHelper';
+import { getDisplayTitle } from '../utils/titleFormatter';
 import { Language, translations } from '../translations';
 
 interface FileExplorerProps {
@@ -52,6 +53,7 @@ const FileTreeItem = React.memo<FileTreeItemProps>(({
   if (!item) return null;
 
   const isFolder = item.type === FileType.FOLDER;
+  const displayName = isFolder ? item.name : getDisplayTitle(item.name);
   const isActive = activeFileId === item.id;
   const paddingLeft = `${depth * 16 + 12}px`;
   
@@ -106,7 +108,7 @@ const FileTreeItem = React.memo<FileTreeItemProps>(({
           className={`mr-2 transition-opacity ${isActive ? 'opacity-100 drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]' : 'opacity-70'}`}
         />
         
-        <span className={`truncate font-medium ${isMatch ? 'text-cyan-300' : ''}`}>{item.name}</span>
+        <span className={`truncate font-medium ${isMatch ? 'text-cyan-300' : ''}`}>{displayName}</span>
       </motion.div>
 
       <AnimatePresence>

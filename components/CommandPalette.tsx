@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, FileText, Command, ArrowRight, Hash, AlignLeft } from 'lucide-react';
 import { FileSystem, FileType, FileSystemItem } from '../types';
 import { Language, translations } from '../translations';
+import { getDisplayTitle } from '../utils/titleFormatter';
 
 interface CommandPaletteProps {
   onClose: () => void;
@@ -151,7 +152,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onClose, files, 
                             <div className="flex items-center gap-3 overflow-hidden">
                                 <FileText size={16} className={index === selectedIndex ? 'text-cyan-400' : 'text-gray-600'} />
                                 <span className={`font-medium truncate ${index === selectedIndex ? 'text-cyan-100' : 'text-gray-400'}`}>
-                                    {item.file.name}
+                                    {getDisplayTitle(item.file.name)}
                                 </span>
                                 
                                 {item.file.tags && item.file.tags.length > 0 && (
