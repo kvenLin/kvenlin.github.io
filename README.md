@@ -7,9 +7,9 @@
 
 ---
 
-![alt text](/public/img/image.png)
+![alt text](https://kvenlin.github.io/img/image.png)
 
-![alt text](/public/img/image-1.png)
+![alt text](https://kvenlin.github.io/img/image-1.png)
 
 ## ✨ 核心特性
 
