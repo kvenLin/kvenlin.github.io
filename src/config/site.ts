@@ -28,6 +28,11 @@ export interface SiteMetadata {
     email: string;
     bio: string;
   };
+  projects: Array<{
+    name: string;
+    description: string;
+    url: string;
+  }>;
 }
 
 export const siteConfig: SiteMetadata = {
@@ -57,5 +62,12 @@ export const siteConfig: SiteMetadata = {
     name: "Kven Lin",
     email: "dev@kven.lin",
     bio: "Senior Frontend Engineer / Creative Developer"
-  }
+  },
+  projects: [
+    {
+      name: 'CineScript Board',
+      description: '影视剧情脚本创作编辑器, AI辅助创作和角色一致性分镜构建',
+      url: 'https://kvenlin.github.io/CineScript-Board/'
+    }
+  ]
 };
