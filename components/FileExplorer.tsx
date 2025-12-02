@@ -39,6 +39,8 @@ const hasMatchingChildren = (fileId: string, files: FileSystem, tag: string | nu
   return false;
 };
 
+const HIDDEN_FILE_IDS = new Set(['file-resume']);
+
 const FileTreeItem = React.memo<FileTreeItemProps>(({ 
   itemId, 
   files, 
@@ -50,7 +52,7 @@ const FileTreeItem = React.memo<FileTreeItemProps>(({
   theme
 }) => {
   const item = files[itemId];
-  if (!item) return null;
+  if (!item || HIDDEN_FILE_IDS.has(item.id)) return null;
 
   const isFolder = item.type === FileType.FOLDER;
   const displayName = isFolder ? item.name : getDisplayTitle(item.name);
@@ -194,40 +196,22 @@ export const FileExplorer: React.FC<FileExplorerProps> = (props) => {
 
              <div className="px-3 py-1 text-[10px] font-bold text-gray-500 tracking-widest uppercase">{t.quickAccess}</div>
              <motion.button 
-                whileHover={{ scale: 1.02, x: 5 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={onNavigateHome}
-                className={`
-                    flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 mx-2 text-left relative overflow-hidden
-                    ${activeFileId === null && !activeTag ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg' : 'text-gray-400 hover:bg-white/5 hover:text-white'}
-                `}
-             >
-                <div className="relative z-10 flex items-center gap-3">
-                    <IconHelper name="dashboard" type="dashboard" className={activeFileId === null && !activeTag ? 'text-white' : ''} />
-                    <span className="font-medium">{t.dashboard}</span>
-                </div>
-                {activeFileId === null && !activeTag && (
-                    <div className="absolute inset-0 bg-white/10 animate-pulse" />
-                )}
-             </motion.button>
-
-             {/* Resume Access */}
-             {files['file-resume'] && (
-                 <motion.button 
-                    whileHover={{ scale: 1.02, x: 5 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => props.onFileClick('file-resume')}
-                    className={`
-                        flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 mx-2 text-left relative overflow-hidden
-                        ${activeFileId === 'file-resume' ? 'bg-cyan-500/20 text-cyan-100 border border-cyan-500/30' : 'text-gray-400 hover:bg-white/5 hover:text-white'}
-                    `}
-                 >
-                    <div className="relative z-10 flex items-center gap-3">
-                        <FileText size={16} className={activeFileId === 'file-resume' ? 'text-cyan-400' : ''} />
-                        <span className="font-medium">Resume</span>
-                    </div>
-                 </motion.button>
-             )}
+               whileHover={{ scale: 1.02, x: 5 }}
+               whileTap={{ scale: 0.98 }}
+               onClick={onNavigateHome}
+               className={`
+                   flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 mx-2 text-left relative overflow-hidden
+                   ${activeFileId === null && !activeTag ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg' : 'text-gray-400 hover:bg-white/5 hover:text-white'}
+               `}
+            >
+               <div className="relative z-10 flex items-center gap-3">
+                   <IconHelper name="dashboard" type="dashboard" className={activeFileId === null && !activeTag ? 'text-white' : ''} />
+                   <span className="font-medium">{t.dashboard}</span>
+               </div>
+               {activeFileId === null && !activeTag && (
+                   <div className="absolute inset-0 bg-white/10 animate-pulse" />
+               )}
+            </motion.button>
           </div>
 
           {/* Categories Section */}

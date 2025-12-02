@@ -262,9 +262,7 @@ function App() {
 
   const handleTagClick = useCallback((tag: string | null) => {
     setActiveTag(tag);
-    if (tag) {
-        setIsSidebarOpen(true);
-    }
+    setIsSidebarOpen(Boolean(tag));
   }, []);
 
   const handleSidebarResizeStart = useCallback((e: React.MouseEvent) => {

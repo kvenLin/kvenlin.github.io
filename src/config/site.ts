@@ -27,6 +27,7 @@ export interface SiteMetadata {
     name: string;
     email: string;
     bio: string;
+    avatar?: string;
   };
   projects: Array<{
     name: string;
@@ -60,8 +61,9 @@ export const siteConfig: SiteMetadata = {
   },
   author: {
     name: "Kven Lin",
-    email: "dev@kven.lin",
-    bio: "Senior Frontend Engineer / Creative Developer"
+    email: "clf1256233771@gmail.com",
+    bio: "Senior Engineer / Creative Developer",
+    avatar: "https://avatars.githubusercontent.com/u/30554496?v=4"
   },
   projects: [
     {

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Clock, GitCommit, Activity, Hash, Folder, ChevronUp, ChevronDown, ExternalLink } from 'lucide-react';
+import { ArrowRight, Clock, GitCommit, Activity, Hash, Folder, ChevronUp, ChevronDown, ExternalLink, UserRound } from 'lucide-react';
 import { FileSystemItem } from '../../types';
 import { Language, translations } from '../../translations';
 import { siteConfig } from '../../src/config/site';
@@ -56,9 +56,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFil
           initial={{ y: 20, opacity: 0 }}
           animate={isBooting ? {} : { y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex flex-col md:flex-row items-center md:items-start justify-between gap-8 p-8 rounded-3xl bg-[#0b1120]/80 border border-white/5 relative overflow-hidden group shadow-2xl backdrop-blur-sm"
+          className="flex flex-col lg:flex-row items-stretch justify-between gap-8 p-8 rounded-3xl bg-gradient-to-br from-[#0b1120]/90 via-[#090f1d]/95 to-[#050912]/95 border border-white/5 relative overflow-hidden group shadow-2xl backdrop-blur-xl"
         >
-          <div className="space-y-6 text-center md:text-left z-10 flex-1">
+          <div className="space-y-6 text-center lg:text-left z-10 flex-1">
             <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-2">
               <span className="px-3 py-1 rounded-full bg-cyan-950/30 border border-cyan-500/20 text-cyan-400 text-xs font-mono flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
@@ -77,43 +77,79 @@ export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFil
               {siteConfig.description}
             </p>
 
-            <div className="flex gap-4 justify-center md:justify-start pt-2">
-              <a href={siteConfig.github.repository_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
-                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
-                  <GitCommit size={16} />
+            <div className="flex flex-col gap-4 pt-4">
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 text-sm text-gray-300">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5">
+                  <Clock size={14} className="text-blue-300" />
+                  <span>{new Date(siteConfig.build.timestamp).toLocaleDateString()}</span>
                 </div>
-                <span>View Source</span>
-              </a>
-              <div className="flex items-center gap-2 text-sm text-gray-400">
-                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
-                  <Clock size={16} />
-                </div>
-                <span>Built: {new Date(siteConfig.build.timestamp).toLocaleDateString()}</span>
+                <a
+                  href={siteConfig.github.repository_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-gray-300 hover:text-white hover:border-cyan-400/60 transition-colors"
+                >
+                  <ExternalLink size={14} className="text-cyan-300" />
+                  View Source
+                </a>
               </div>
+
             </div>
           </div>
 
           <motion.div
-            className="hidden md:flex flex-col items-end gap-6 opacity-80"
-            initial={{ scale: 0, rotate: -180 }}
-            animate={isBooting ? {} : { scale: 1, rotate: 0 }}
-            transition={{ type: 'spring', stiffness: 100, delay: 0.4 }}
+            className="w-full lg:w-[340px] relative"
+            initial={{ opacity: 0, x: 30 }}
+            animate={isBooting ? {} : { opacity: 1, x: 0 }}
+            transition={{ delay: 0.3, type: 'spring', stiffness: 90 }}
           >
-            <div className="relative flex items-center justify-center perspective-1000 cursor-pointer group w-24 h-24">
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-blue-600/10 to-transparent blur-3xl opacity-40" />
+            <motion.div
+              whileHover={{ y: -4 }}
+              className="relative border border-white/10 rounded-2xl bg-[#050d1a]/80 backdrop-blur-xl shadow-[0_15px_45px_rgba(15,23,42,0.45)] overflow-hidden"
+            >
+              <div className="p-6 space-y-4">
+                <div className="flex flex-col items-center text-center gap-3">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => onOpenFile('file-resume')}
+                    className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-cyan-400/50 shadow-lg"
+                    title={t.resumeCta}
+                  >
+                    <img
+                      src={siteConfig.author.avatar || 'https://avatars.githubusercontent.com/u/000000?v=4'}
+                      alt={siteConfig.author.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </motion.button>
+                  <div>
+                    <p className="text-xs font-mono text-cyan-400 uppercase tracking-[0.4em]">{siteConfig.author.name}</p>
+                    <p className="text-base text-gray-100 mt-1 font-semibold">{siteConfig.author.bio}</p>
+                    <p className="text-xs text-gray-500 mt-1">{siteConfig.author.email}</p>
+                  </div>
+                  <button
+                    onClick={() => onOpenFile('file-resume')}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500/30 to-blue-500/30 text-cyan-50 border border-cyan-400/40 font-semibold text-xs shadow-[0_8px_18px_rgba(14,165,233,0.35)] hover:translate-y-0.5 transition-transform"
+                  >
+                    <UserRound size={14} />
+                    {t.resumeCta}
+                  </button>
+                </div>
+              </div>
+
               <motion.div
-                layoutId="core-outer"
-                className="system-core absolute inset-0 rounded-full border-2 border-dashed border-cyan-500/30 w-full h-full"
-                style={{ animationDuration: '10s' }}
+                className="absolute -right-6 -bottom-6 w-28 h-28 border border-dashed border-cyan-500/30 rounded-full"
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 30, ease: 'linear' }}
               />
               <motion.div
-                layoutId="core-inner"
-                className="system-core absolute inset-4 border-cyan-400/50 rounded-full border"
-                style={{ animationDirection: 'reverse', animationDuration: '15s' }}
+                className="absolute -right-2 -bottom-2 w-16 h-16 border border-cyan-500/40 rounded-full"
+                animate={{ rotate: -360 }}
+                transition={{ repeat: Infinity, duration: 20, ease: 'linear' }}
               />
-              <motion.div layoutId="core-icon" className="absolute inset-0 flex items-center justify-center z-10">
-                <Activity size={32} className="text-cyan-200 animate-pulse" />
-              </motion.div>
-            </div>
+            </motion.div>
           </motion.div>
         </motion.div>
 
@@ -168,34 +204,39 @@ export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFil
           <motion.div layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex flex-col gap-4">
             <motion.div layout className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               <AnimatePresence mode="popLayout">
-                {visibleCategories.map(([cat, count]) => (
-                  <motion.div
-                    layout
-                    key={cat}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    whileHover={{ scale: 1.05, y: -5, rotateX: 10 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="relative group cursor-pointer perspective-500"
-                    onClick={() => onTagClick(cat)}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    <div className="relative h-32 bg-[#0f172a]/60 border border-white/10 rounded-xl p-4 flex flex-col justify-between overflow-hidden backdrop-blur-md group-hover:border-cyan-500/50 transition-colors">
-                      <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-30 transition-opacity">
-                        <Hash size={48} />
+                {visibleCategories.map(([cat, count]) => {
+                  const isActive = activeTag === cat;
+                  return (
+                    <motion.div
+                      layout
+                      key={cat}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      whileHover={{ scale: 1.05, y: -5, rotateX: 10 }}
+                      whileTap={{ scale: 0.95 }}
+                      className={`relative group cursor-pointer perspective-500 ${isActive ? 'ring-2 ring-cyan-400/80 rounded-2xl' : ''}`}
+                      onClick={() => onTagClick(isActive ? null : cat)}
+                    >
+                      <div className={`absolute inset-0 rounded-xl blur-lg transition-opacity duration-500 ${isActive ? 'opacity-100 bg-gradient-to-br from-cyan-500/40 to-blue-500/30' : 'opacity-0 group-hover:opacity-100 bg-gradient-to-br from-cyan-500/20 to-blue-600/20'}`} />
+                      <div className={`relative h-32 rounded-xl p-4 flex flex-col justify-between overflow-hidden backdrop-blur-md transition-colors ${isActive ? 'bg-[#0f172a]/80 border-cyan-400/60' : 'bg-[#0f172a]/60 border border-white/10 group-hover:border-cyan-500/50'}`}>
+                        <div className={`absolute top-0 right-0 p-3 transition-opacity ${isActive ? 'opacity-40' : 'opacity-10 group-hover:opacity-30'}`}>
+                          <Hash size={48} />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Folder size={24} className={`${isActive ? 'text-cyan-300 drop-shadow-[0_0_10px_rgba(34,211,238,0.4)]' : 'text-cyan-500 group-hover:text-cyan-400'} transition-colors`} />
+                          <span className={`text-xs font-mono px-2 py-0.5 rounded-full border ${isActive ? 'text-cyan-100 border-cyan-400/50 bg-cyan-500/10' : 'text-gray-500 bg-black/30 border-white/10'}`}>
+                            {count}
+                          </span>
+                        </div>
+                        <div className="mt-auto pt-4">
+                          <h3 className={`${isActive ? 'text-cyan-100' : 'text-gray-300 group-hover:text-cyan-300'} font-medium truncate capitalize`}>{cat}</h3>
+                          <div className={`h-0.5 mt-2 transition-all duration-500 ${isActive ? 'w-full bg-cyan-400' : 'w-8 bg-cyan-500/30 group-hover:w-full'}`} />
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <Folder size={24} className="text-cyan-500 group-hover:text-cyan-400 transition-colors" />
-                        <span className="text-xs font-mono text-gray-500 bg-black/30 px-2 py-0.5 rounded-full">{count}</span>
-                      </div>
-                      <div className="mt-auto pt-4">
-                        <h3 className="font-medium text-gray-300 group-hover:text-cyan-300 truncate capitalize">{cat}</h3>
-                        <div className="w-8 h-0.5 bg-cyan-500/30 mt-2 group-hover:w-full transition-all duration-500" />
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
             </motion.div>
 
