@@ -17,7 +17,30 @@ const ensureDirectories = () => {
   fs.mkdirSync(PUBLIC_IMG_DIR, { recursive: true });
 };
 
-const moveImagesFromPosts = () => {
+const getExistingImageNames = () => {
+  if (!fs.existsSync(PUBLIC_IMG_DIR)) return new Set();
+  return new Set(
+    fs.readdirSync(PUBLIC_IMG_DIR).map(name => name.toLowerCase())
+  );
+};
+
+const getUniqueTargetName = (filename, existingNames) => {
+  const ext = path.extname(filename);
+  const base = path.basename(filename, ext);
+  const timestamp = Date.now();
+  let candidate = `${base}-${timestamp}${ext}`;
+  let counter = 1;
+
+  while (existingNames.has(candidate.toLowerCase())) {
+    candidate = `${base}-${timestamp}-${counter}${ext}`;
+    counter += 1;
+  }
+
+  existingNames.add(candidate.toLowerCase());
+  return candidate;
+};
+
+const moveImagesFromPosts = (existingNames) => {
   const moved = [];
   const entries = fs.readdirSync(POSTS_DIR, { withFileTypes: true });
 
@@ -28,24 +51,31 @@ const moveImagesFromPosts = () => {
     if (!IMAGE_EXTS.has(ext)) return;
 
     const sourcePath = path.join(POSTS_DIR, entry.name);
-    const targetPath = path.join(PUBLIC_IMG_DIR, entry.name);
+    const targetName = getUniqueTargetName(entry.name, existingNames);
+    const targetPath = path.join(PUBLIC_IMG_DIR, targetName);
 
-    if (!fs.existsSync(targetPath)) {
-      fs.copyFileSync(sourcePath, targetPath);
-      console.log(`📁 Copied ${entry.name} -> public/img`);
-    } else {
-      console.log(`ℹ️  ${entry.name} already exists in public/img, skipping copy.`);
-    }
-
+    fs.copyFileSync(sourcePath, targetPath);
     fs.unlinkSync(sourcePath);
-    moved.push(entry.name);
+
+    const renamed = targetName !== entry.name;
+    console.log(
+      renamed
+        ? `📁 Copied ${entry.name} -> public/img/${targetName}`
+        : `📁 Copied ${entry.name} -> public/img`
+    );
+
+    moved.push({ original: entry.name, newName: targetName });
   });
 
   return moved;
 };
 
-const updateMarkdownReferences = () => {
+const updateMarkdownReferences = (movedImages) => {
   const updatedFiles = [];
+  const renameMap = movedImages.reduce((acc, item) => {
+    acc[item.original] = item.newName;
+    return acc;
+  }, {});
   const mdFiles = fs.readdirSync(POSTS_DIR, { withFileTypes: true })
     .filter(entry => entry.isFile() && entry.name.endsWith('.md'))
     .map(entry => entry.name);
@@ -61,7 +91,8 @@ const updateMarkdownReferences = () => {
       if (/^https?:\/\//i.test(url)) return match;
 
       const cleanName = path.basename(url);
-      const newUrl = `${SITE_BASE}/img/${cleanName}`;
+      const mappedName = renameMap[cleanName] || cleanName;
+      const newUrl = `${SITE_BASE}/img/${mappedName}`;
       updated = true;
       return `${prefix}${newUrl}${suffix})`;
     });
@@ -78,8 +109,9 @@ const updateMarkdownReferences = () => {
 
 const main = () => {
   ensureDirectories();
-  const movedImages = moveImagesFromPosts();
-  const touchedMarkdown = updateMarkdownReferences();
+  const existingNames = getExistingImageNames();
+  const movedImages = moveImagesFromPosts(existingNames);
+  const touchedMarkdown = updateMarkdownReferences(movedImages);
 
   console.log('\n✅ Image sync complete.');
   console.log(`📦 Images moved: ${movedImages.length}`);
