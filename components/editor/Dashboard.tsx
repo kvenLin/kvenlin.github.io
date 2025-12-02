@@ -78,7 +78,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFil
 
             <div className="flex gap-4 justify-center md:justify-start pt-2">
               <a href={siteConfig.github.repository_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
-                <div className="w-8 h-8 rounded-full bg-white/5 precipitems-center justify-center border border-white/10">
+                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
                   <GitCommit size={16} />
                 </div>
                 <span>View Source</span>
