@@ -36,7 +36,7 @@ interface EditorAreaProps {
   onNavigateHome?: () => void;
 }
 
-export const EditorArea: React.FC<EditorAreaProps> = ({
+export const EditorArea: React.FC<EditorAreaProps> = React.memo(({
   openFiles,
   activeFileId,
   files,
@@ -215,6 +215,7 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
     if (!previewState) return;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        event.stopImmediatePropagation(); // 完全阻止所有后续处理器，包括 App 的全局 ESC 处理器
         closeImagePreview();
       } else if (event.key === 'ArrowLeft') {
         handleNavigate(-1);
@@ -222,8 +223,9 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
         handleNavigate(1);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    // 使用捕获阶段确保在 App 的处理器之前执行
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [previewState, closeImagePreview, handleNavigate]);
 
   useEffect(() => {
@@ -457,6 +459,6 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
       />
     </motion.div>
   );
-};
+});
 
 export default EditorArea;

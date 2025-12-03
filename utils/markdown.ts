@@ -14,12 +14,18 @@ export const slugify = (text: string) =>
     .replace(/^-|-$/g, '') || 'section';
 
 export const createSlugger = () => {
+  const cache = new Map<string, string>(); // 缓存已处理的 value -> id
   const counts = new Map<string, number>();
   return (value: string) => {
+    // 幂等性：相同的 value 返回相同的 id，避免重渲染时 ID 累加
+    if (cache.has(value)) {
+      return cache.get(value)!;
+    }
     const base = slugify(value);
     const count = counts.get(base) || 0;
     const id = count === 0 ? base : `${base}-${count}`;
     counts.set(base, count + 1);
+    cache.set(value, id);
     return id;
   };
 };

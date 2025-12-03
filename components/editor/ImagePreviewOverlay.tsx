@@ -80,7 +80,7 @@ export const ImagePreviewOverlay: React.FC<ImagePreviewOverlayProps> = ({
           </div>
 
           <div className="rounded-2xl border border-white/20 bg-black/60 shadow-2xl overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/30 text-sm text-gray-200">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/30 text-sm text-gray-200 relative z-10">
               <div className="flex items-center gap-2">
                 <button onClick={() => onAdjustZoom(PREVIEW_ZOOM_STEP)} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors" aria-label="放大">
                   <ZoomIn size={18} />
@@ -99,7 +99,7 @@ export const ImagePreviewOverlay: React.FC<ImagePreviewOverlayProps> = ({
               </div>
             </div>
 
-            <div className="relative flex-1 min-h-[60vh] flex items-center justify-center bg-black/80">
+            <div className="relative flex-1 min-h-[60vh] flex items-center justify-center bg-black/80 z-0">
               {previewState.images.map((img, idx) => (
                 <AnimatePresence key={img.id}>
                   {idx === previewState.index && (

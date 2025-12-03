@@ -9,7 +9,7 @@ import { Terminal } from './components/Terminal';
 import { CommandPalette } from './components/CommandPalette';
 import { BootSequence } from './components/BootSequence';
 import { Background } from './components/Background';
-import { TerminalSquare, Menu, ArrowUp, ArrowDown, Moon, Sun, LayoutGrid, ChevronLeft } from 'lucide-react';
+import { TerminalSquare, Menu, ArrowUp, ArrowDown, Moon, Sun, LayoutGrid, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Language, translations } from './translations';
 import { loadPosts, loadSingleFile } from './utils/postLoader';
 
@@ -34,6 +34,7 @@ function App() {
   const [sidebarWidth, setSidebarWidth] = useState<number>(SIDEBAR_DEFAULT_WIDTH);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [isNearLeftEdge, setIsNearLeftEdge] = useState(false);
+  const [isNearCollapsedEdge, setIsNearCollapsedEdge] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const sidebarResizeState = useRef({ startX: 0, startWidth: SIDEBAR_DEFAULT_WIDTH });
 
@@ -129,12 +130,15 @@ function App() {
             containerRef.current.style.setProperty('--mouse-y', `${mouseY}px`);
         }
         
-        // 检测鼠标是否靠近左侧边缘（只在侧边栏打开时有效）
+        // 检测鼠标是否靠近侧边栏边缘
         if (isSidebarOpen) {
             const nearEdge = mouseX <= sidebarWidth + EDGE_THRESHOLD && mouseX >= sidebarWidth - 20;
             setIsNearLeftEdge(nearEdge);
+            if (isNearCollapsedEdge) setIsNearCollapsedEdge(false);
         } else {
-            setIsNearLeftEdge(false);
+            const nearCollapsed = mouseX <= EDGE_THRESHOLD;
+            setIsNearCollapsedEdge(nearCollapsed);
+            if (isNearLeftEdge) setIsNearLeftEdge(false);
         }
         
         rafId = null;
@@ -396,6 +400,30 @@ function App() {
             <Menu size={20} />
         </motion.button>
       )}
+
+      {/* 吸附式侧边栏展开按钮 - 当侧边栏关闭且鼠标靠近左边缘时显示 */}
+      <AnimatePresence>
+        {!isSidebarOpen && !isBooting && isNearCollapsedEdge && (
+          <motion.button
+            initial={{ x: -20, opacity: 0, scale: 0.8 }}
+            animate={{ x: 0, opacity: 1, scale: 1 }}
+            exit={{ x: -20, opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setIsSidebarOpen(true)}
+            className="fixed z-50 p-2 bg-black/60 border border-cyan-500/50 rounded-full text-cyan-400 hover:text-white hover:bg-cyan-500/20 hover:border-cyan-400 backdrop-blur-md transition-colors shadow-lg shadow-cyan-500/20"
+            style={{
+              left: 8,
+              top: '50%',
+              transform: 'translateY(-50%)'
+            }}
+            title="展开侧边栏 (Ctrl+B)"
+          >
+            <ChevronRight size={18} />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* 吸附式侧边栏收缩按钮 - 当鼠标靠近侧边栏边缘时显示 */}
       <AnimatePresence>
