@@ -70,6 +70,11 @@ export const siteConfig: SiteMetadata = {
       name: 'CineScript Board',
       description: '影视剧情脚本创作编辑器, AI辅助创作和角色一致性分镜构建',
       url: 'https://kvenlin.github.io/CineScript-Board/'
+    },
+    {
+      name: 'VlogLens',
+      description: '你的私人 AI 视频日记助手, 将随手拍的视频片段，一键转化为图文并茂的视觉日记和小红书风格种草文案',
+      url: 'https://kvenlin.github.io/VlogLens/'
     }
   ]
 };
