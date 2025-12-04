@@ -2,7 +2,7 @@
 title: 为 GitHub Pages 博客添加评论系统：从 Gitment 到 Giscus
 date: 2025-11-28
 categories: 
- - categories/github
+ - 教程/github
 tags: 
   - github-pages
   - comments

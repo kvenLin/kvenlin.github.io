@@ -146,27 +146,22 @@ export const FileExplorer: React.FC<FileExplorerProps> = (props) => {
   const { files, onNavigateHome, activeFileId, activeTag, onTagClick, onOpenSearch, language, onToggleSidebar, theme } = props;
   const t = translations[language];
 
-  // Expand state for Categories and Tags
-  const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
+  // Expand state for Tags
   const [isTagsExpanded, setIsTagsExpanded] = useState(false);
   const INITIAL_VISIBLE_COUNT = 6;
 
-  const { allTags, allCategories } = useMemo(() => {
+  const { allTags } = useMemo(() => {
     const tags = new Set<string>();
-    const categories = new Set<string>();
     
     (Object.values(files) as FileSystemItem[]).forEach(file => {
       if (file.tags) file.tags.forEach(t => tags.add(t));
-      if (file.categories) file.categories.forEach(c => categories.add(c));
     });
     
     return {
         allTags: Array.from(tags).sort(),
-        allCategories: Array.from(categories).sort()
     };
   }, [files]);
 
-  const visibleCategories = isCategoriesExpanded ? allCategories : allCategories.slice(0, INITIAL_VISIBLE_COUNT);
   const visibleTags = isTagsExpanded ? allTags : allTags.slice(0, INITIAL_VISIBLE_COUNT);
 
   return (
@@ -213,45 +208,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = (props) => {
                )}
             </motion.button>
           </div>
-
-          {/* Categories Section */}
-          {allCategories.length > 0 && (
-              <div className="flex flex-col gap-1 px-2 mt-4 shrink-0">
-                <div className="px-3 py-1 text-[10px] font-bold text-gray-500 tracking-widest uppercase flex justify-between items-center">
-                    <span>Categories</span>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    {visibleCategories.map((cat) => {
-                        const isActive = activeTag === cat;
-                        return (
-                            <motion.button
-                                key={cat}
-                                onClick={() => onTagClick(isActive ? null : cat)}
-                                className={`
-                                    flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-all duration-200 mx-2 text-left group
-                                    ${isActive ? 'bg-cyan-900/30 text-cyan-300' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'}
-                                `}
-                            >
-                                <Folder size={12} className={isActive ? 'text-cyan-400' : 'text-gray-600 group-hover:text-gray-400'} />
-                                <span className="capitalize">{cat}</span>
-                            </motion.button>
-                        )
-                    })}
-                    {allCategories.length > INITIAL_VISIBLE_COUNT && (
-                        <button 
-                            onClick={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
-                            className="flex items-center gap-1 px-5 py-1 text-[10px] text-gray-500 hover:text-cyan-400 transition-colors ml-1"
-                        >
-                            {isCategoriesExpanded ? (
-                                <><ChevronUp size={10} /> Show Less</>
-                            ) : (
-                                <><ChevronDown size={10} /> Show {allCategories.length - INITIAL_VISIBLE_COUNT} More</>
-                            )}
-                        </button>
-                    )}
-                </div>
-              </div>
-          )}
 
           {/* Tags Section */}
           {allTags.length > 0 && (

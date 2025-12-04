@@ -1,11 +1,22 @@
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Clock, GitCommit, Activity, Hash, Folder, ChevronUp, ChevronDown, ExternalLink, UserRound } from 'lucide-react';
+import { ArrowRight, Clock, GitCommit, Activity, Folder, ChevronUp, ChevronDown, ExternalLink, UserRound, Home, ChevronRight, FileText, Archive } from 'lucide-react';
 import { FileSystemItem } from '../../types';
 import { Language, translations } from '../../translations';
 import { siteConfig } from '../../src/config/site';
 import { IconHelper } from '../IconHelper';
 import { getDisplayTitle } from '../../utils/titleFormatter';
+
+// Category tree node structure
+interface CategoryNode {
+  name: string;
+  fullPath: string;
+  count: number;
+  totalCount: number; // Total posts including all sub-categories
+  children: Record<string, CategoryNode>;
+  hasChildren: boolean;
+  depth: number; // Max depth of children
+}
 
 interface DashboardProps {
   files: Record<string, FileSystemItem>;
@@ -18,31 +29,178 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFile, isBooting, onTagClick, activeTag }) => {
   const t = translations[language];
+  
+  // Current category path for drill-down navigation
+  const [categoryPath, setCategoryPath] = useState<string[]>([]);
+  // Track which category was clicked for expand animation
+  const [expandingFromIndex, setExpandingFromIndex] = useState<number | null>(null);
+  // Track animation direction: 'enter' for drilling down, 'exit' for going back
+  const [animDirection, setAnimDirection] = useState<'enter' | 'exit'>('enter');
 
-  const recentPosts = (Object.values(files) as FileSystemItem[])
-    .filter(f => {
-      const isPost = f.type === 'FILE' && f.parentId?.includes('post');
-      if (!activeTag) return isPost;
-      return isPost && (f.tags?.includes(activeTag) || f.categories?.includes(activeTag));
-    })
-    .sort((a, b) => new Date(b.date || '').getTime() - new Date(a.date || '').getTime())
-    .slice(0, activeTag ? 20 : 4);
-
-  const categories = useMemo(() => {
-    const cats: Record<string, number> = {};
+  // Build category tree structure
+  const categoryTree = useMemo(() => {
+    const root: Record<string, CategoryNode> = {};
+    
     (Object.values(files) as FileSystemItem[]).forEach(f => {
       if (f.categories) {
-        f.categories.forEach(c => {
-          cats[c] = (cats[c] || 0) + 1;
+        f.categories.forEach(catPath => {
+          const parts = catPath.split('/').filter(Boolean);
+          let currentLevel = root;
+          let fullPath = '';
+          
+          parts.forEach((part, index) => {
+            fullPath = fullPath ? `${fullPath}/${part}` : part;
+            
+            if (!currentLevel[part]) {
+              currentLevel[part] = {
+                name: part,
+                fullPath,
+                count: 0,
+                totalCount: 0,
+                children: {},
+                hasChildren: false,
+                depth: 0
+              };
+            }
+            
+            // Count at each level for totalCount
+            currentLevel[part].totalCount++;
+            
+            // Only count at the leaf level (the actual category of the file)
+            if (index === parts.length - 1) {
+              currentLevel[part].count++;
+            }
+            
+            // Mark parent as having children
+            if (index < parts.length - 1) {
+              currentLevel[part].hasChildren = true;
+            }
+            
+            currentLevel = currentLevel[part].children;
+          });
         });
       }
     });
-    return Object.entries(cats).sort((a, b) => b[1] - a[1]);
+    
+    // Calculate depth for each node
+    const calculateDepth = (node: CategoryNode): number => {
+      const childNodes = Object.values(node.children);
+      if (childNodes.length === 0) return 0;
+      const maxChildDepth = Math.max(...childNodes.map(calculateDepth));
+      node.depth = maxChildDepth + 1;
+      return node.depth;
+    };
+    
+    Object.values(root).forEach(calculateDepth);
+    
+    return root;
   }, [files]);
 
+  // Get current level categories based on path
+  const currentCategories = useMemo(() => {
+    let level = categoryTree;
+    for (const segment of categoryPath) {
+      if (level[segment]) {
+        level = level[segment].children;
+      } else {
+        return [];
+      }
+    }
+    return Object.values(level).sort((a, b) => b.count - a.count);
+  }, [categoryTree, categoryPath]);
+
+  // Get posts for current category path
+  const currentPathString = categoryPath.join('/');
+  
+  const recentPosts = useMemo(() => {
+    return (Object.values(files) as FileSystemItem[])
+      .filter(f => {
+        const isPost = f.type === 'FILE' && f.parentId?.includes('post');
+        if (!isPost) return false;
+        
+        // If we have a category path, filter by it
+        if (currentPathString) {
+          return f.categories?.some(cat => cat.startsWith(currentPathString));
+        }
+        
+        // If activeTag is set from somewhere else, use it
+        if (activeTag) {
+          return f.tags?.includes(activeTag) || f.categories?.includes(activeTag);
+        }
+        
+        return true;
+      })
+      .sort((a, b) => new Date(b.date || '').getTime() - new Date(a.date || '').getTime())
+      .slice(0, currentPathString ? 20 : 4);
+  }, [files, currentPathString, activeTag]);
+
+  // Navigation handlers
+  const handleCategoryClick = (cat: CategoryNode, index: number) => {
+    // If clicking on already active category, toggle off the filter
+    if (activeTag === cat.fullPath) {
+      onTagClick(null);
+      return;
+    }
+    
+    if (cat.hasChildren) {
+      // Has sub-categories, drill down with animation from clicked card
+      setExpandingFromIndex(index);
+      setAnimDirection('enter');
+      // Small delay to allow exit animation
+      setTimeout(() => {
+        setCategoryPath([...categoryPath, cat.name]);
+        // Reset after animation starts
+        setTimeout(() => setExpandingFromIndex(null), 50);
+      }, 150);
+    } else {
+      // Leaf category, trigger filter
+      onTagClick(cat.fullPath);
+    }
+  };
+
+  const handleBreadcrumbClick = (index: number) => {
+    setAnimDirection('exit');
+    if (index < 0) {
+      setCategoryPath([]);
+      onTagClick(null);
+    } else {
+      setCategoryPath(categoryPath.slice(0, index + 1));
+    }
+  };
+
+  const handleBackClick = () => {
+    if (categoryPath.length > 0) {
+      setCategoryPath(categoryPath.slice(0, -1));
+    }
+  };
+
   const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
-  const INITIAL_VISIBLE_CATS = 12;
-  const visibleCategories = isCategoriesExpanded ? categories : categories.slice(0, INITIAL_VISIBLE_CATS);
+  const INITIAL_VISIBLE_CATS = 8;
+  const visibleCategories = isCategoriesExpanded ? currentCategories : currentCategories.slice(0, INITIAL_VISIBLE_CATS);
+
+  // ESC key to go back one level (not directly to root)
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        // First, clear activeTag if set
+        if (activeTag) {
+          e.preventDefault();
+          e.stopPropagation();
+          onTagClick(null);
+          return;
+        }
+        // Then, go back one level in category path
+        if (categoryPath.length > 0) {
+          e.preventDefault();
+          e.stopPropagation();
+          setAnimDirection('exit');
+          setCategoryPath(categoryPath.slice(0, -1));
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [categoryPath, activeTag, onTagClick]);
 
   return (
     <motion.div
@@ -153,6 +311,58 @@ export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFil
           </motion.div>
         </motion.div>
 
+        {/* Stats Section */}
+        <motion.div
+          initial="hidden"
+          animate={isBooting ? 'hidden' : 'visible'}
+          variants={{
+            hidden: { opacity: 0 },
+            visible: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.1,
+                delayChildren: 0.2,
+              },
+            },
+          }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        >
+          {[
+            {
+              icon: Clock,
+              label: 'Last Build',
+              value: new Date(siteConfig.build.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              color: 'text-blue-400',
+            },
+            {
+              icon: GitCommit,
+              label: t.totalPosts,
+              value: (Object.values(files) as FileSystemItem[]).filter(f => f.name.endsWith('.md') && f.parentId?.includes('post')).length,
+              color: 'text-purple-400',
+            },
+            {
+              icon: Activity,
+              label: 'System Version',
+              value: `v${siteConfig.build.version}`,
+              color: 'text-emerald-400',
+            },
+          ].map((stat, idx) => (
+            <motion.div
+              key={idx}
+              variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}
+              className="bg-[#0f172a]/40 border border-white/5 p-5 rounded-2xl flex items-center gap-5 hover:border-white/10 hover:bg-white/5 transition-all group backdrop-blur-sm"
+            >
+              <div className={`p-3 rounded-xl bg-black/40 ${stat.color} shadow-inner group-hover:scale-110 transition-transform`}>
+                <stat.icon size={20} />
+              </div>
+              <div>
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-1">{stat.label}</div>
+                <div className="text-xl font-mono font-medium text-gray-100">{stat.value}</div>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+
         {siteConfig.projects.length > 0 && (
           <motion.div
             layout
@@ -200,112 +410,190 @@ export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFil
           </motion.div>
         )}
 
-        {categories.length > 0 && (
+        {currentCategories.length > 0 && (
           <motion.div layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex flex-col gap-4">
-            <motion.div layout className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              <AnimatePresence mode="popLayout">
-                {visibleCategories.map(([cat, count]) => {
-                  const isActive = activeTag === cat;
+             <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-cyan-500/80 uppercase tracking-widest flex items-center gap-2">
+                <Folder size={14} /> Categories
+              </h3>
+              <div className="h-px flex-1 bg-gradient-to-r from-cyan-900/50 to-transparent ml-4" />
+            </div>
+
+            {/* Breadcrumb Navigation */}
+            {categoryPath.length > 0 && (
+              <div className="flex items-center gap-2 text-sm">
+                <button
+                  onClick={() => handleBreadcrumbClick(-1)}
+                  className="flex items-center gap-1 text-slate-400 hover:text-cyan-400 transition-colors"
+                >
+                  <Home size={14} />
+                  <span>Root</span>
+                </button>
+                {categoryPath.map((segment, index) => (
+                  <React.Fragment key={index}>
+                    <ChevronRight size={14} className="text-slate-600" />
+                    <button
+                      onClick={() => handleBreadcrumbClick(index)}
+                      className={`transition-colors ${
+                        index === categoryPath.length - 1
+                          ? 'text-cyan-400 font-medium'
+                          : 'text-slate-400 hover:text-cyan-400'
+                      }`}
+                    >
+                      {segment}
+                    </button>
+                  </React.Fragment>
+                ))}
+              </div>
+            )}
+
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={categoryPath.join('/')}
+                initial={animDirection === 'enter' ? { opacity: 0, scale: 0.5, y: 50 } : { opacity: 0, scale: 1.1, y: -30 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={animDirection === 'enter' ? { opacity: 0, scale: 1.1, y: -30 } : { opacity: 0, scale: 0.5, y: 50 }}
+                transition={{ 
+                  duration: 0.4, 
+                  ease: [0.4, 0, 0.2, 1],
+                  staggerChildren: 0.05
+                }}
+                className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"
+              >
+                {visibleCategories.map((cat, index) => {
+                  const isActive = activeTag === cat.fullPath;
+                  // Stack layers based on depth (max 3 layers)
+                  const stackLayers = Math.min(cat.depth, 3);
+                  const isBeingClicked = expandingFromIndex === index;
+                  
                   return (
                     <motion.div
-                      layout
-                      key={cat}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      whileHover={{ scale: 1.05, y: -5, rotateX: 10 }}
-                      whileTap={{ scale: 0.95 }}
-                      className={`relative group cursor-pointer perspective-500 ${isActive ? 'ring-2 ring-cyan-400/80 rounded-2xl' : ''}`}
-                      onClick={() => onTagClick(isActive ? null : cat)}
+                      key={cat.fullPath}
+                      initial={{ opacity: 0, scale: 0.8, y: 30 }}
+                      animate={{ 
+                        opacity: isBeingClicked ? 0.5 : 1, 
+                        scale: isBeingClicked ? 1.05 : 1, 
+                        y: 0,
+                        transition: { delay: index * 0.03, duration: 0.3 }
+                      }}
+                      whileHover={{ scale: 1.02, y: -4 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleCategoryClick(cat, index)}
+                      className="group relative w-full cursor-pointer"
+                      style={{ paddingTop: stackLayers * 4, paddingRight: stackLayers * 4 }}
                     >
-                      <div className={`absolute inset-0 rounded-xl blur-lg transition-opacity duration-500 ${isActive ? 'opacity-100 bg-gradient-to-br from-cyan-500/40 to-blue-500/30' : 'opacity-0 group-hover:opacity-100 bg-gradient-to-br from-cyan-500/20 to-blue-600/20'}`} />
-                      <div className={`relative h-32 rounded-xl p-4 flex flex-col justify-between overflow-hidden backdrop-blur-md transition-colors ${isActive ? 'bg-[#0f172a]/80 border-cyan-400/60' : 'bg-[#0f172a]/60 border border-white/10 group-hover:border-cyan-500/50'}`}>
-                        <div className={`absolute top-0 right-0 p-3 transition-opacity ${isActive ? 'opacity-40' : 'opacity-10 group-hover:opacity-30'}`}>
-                          <Hash size={48} />
+                      {/* Stack layers based on depth */}
+                      {stackLayers >= 3 && (
+                        <div className={`absolute top-0 right-0 w-full h-full rounded-2xl border transition-all duration-300 -z-30
+                          ${isActive 
+                            ? 'bg-cyan-900/20 border-cyan-500/20' 
+                            : 'bg-[#0f172a]/30 border-white/5 group-hover:bg-[#0f172a]/40'
+                          }
+                        `} style={{ transform: 'translate(8px, 8px)' }} />
+                      )}
+                      {stackLayers >= 2 && (
+                        <div className={`absolute top-0 right-0 w-full h-full rounded-2xl border transition-all duration-300 -z-20
+                          ${isActive 
+                            ? 'bg-cyan-900/30 border-cyan-500/25' 
+                            : 'bg-[#0f172a]/40 border-white/5 group-hover:bg-[#0f172a]/50'
+                          }
+                        `} style={{ transform: 'translate(4px, 4px)' }} />
+                      )}
+                      {stackLayers >= 1 && (
+                        <div className={`absolute top-0 right-0 w-full h-full rounded-2xl border transition-all duration-300 -z-10
+                          ${isActive 
+                            ? 'bg-cyan-900/40 border-cyan-500/30' 
+                            : 'bg-[#0f172a]/50 border-white/5 group-hover:bg-[#0f172a]/60'
+                          }
+                        `} style={{ transform: 'translate(2px, 2px)' }} />
+                      )}
+
+                      {/* Main Card */}
+                      <div className={`relative rounded-2xl border p-5 overflow-hidden transition-all duration-300
+                        ${isActive 
+                            ? 'bg-gradient-to-br from-cyan-950/70 via-[#0f172a]/90 to-[#0f172a]/80 border-cyan-500/50 shadow-2xl shadow-cyan-900/30' 
+                            : 'bg-gradient-to-br from-[#0f172a]/60 via-[#0f172a]/50 to-[#0B1121]/60 border-white/10 hover:border-cyan-500/40 hover:shadow-2xl hover:shadow-cyan-900/20 hover:-translate-y-1'
+                        }
+                      `}>
+                        
+                        {/* Gradient overlay on hover */}
+                        <div className={`absolute inset-0 transition-opacity duration-300 bg-gradient-to-br from-cyan-500/15 via-blue-500/10 to-transparent ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} />
+
+                        {/* Header with Archive icon */}
+                        <div className="relative flex items-center justify-between mb-4">
+                          <div className={`p-2.5 rounded-xl border transition-all duration-300 ${
+                            isActive 
+                              ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300' 
+                              : 'bg-black/30 border-white/10 text-gray-400 group-hover:text-cyan-300 group-hover:border-cyan-500/30 group-hover:bg-cyan-500/10'
+                          }`}>
+                            <Archive size={20} />
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <span className={`text-xl font-bold font-mono transition-colors ${
+                              isActive ? 'text-cyan-300' : 'text-gray-300 group-hover:text-white'
+                            }`}>
+                              {cat.totalCount}
+                            </span>
+                            <span className="text-[10px] text-gray-500 uppercase tracking-wider">
+                              {cat.totalCount === 1 ? 'post' : 'posts'}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <Folder size={24} className={`${isActive ? 'text-cyan-300 drop-shadow-[0_0_10px_rgba(34,211,238,0.4)]' : 'text-cyan-500 group-hover:text-cyan-400'} transition-colors`} />
-                          <span className={`text-xs font-mono px-2 py-0.5 rounded-full border ${isActive ? 'text-cyan-100 border-cyan-400/50 bg-cyan-500/10' : 'text-gray-500 bg-black/30 border-white/10'}`}>
-                            {count}
-                          </span>
-                        </div>
-                        <div className="mt-auto pt-4">
-                          <h3 className={`${isActive ? 'text-cyan-100' : 'text-gray-300 group-hover:text-cyan-300'} font-medium truncate capitalize`}>{cat}</h3>
-                          <div className={`h-0.5 mt-2 transition-all duration-500 ${isActive ? 'w-full bg-cyan-400' : 'w-8 bg-cyan-500/30 group-hover:w-full'}`} />
+
+                        {/* Title */}
+                        <h3 className={`relative text-lg font-semibold tracking-tight transition-colors truncate ${
+                          isActive ? 'text-white' : 'text-gray-100 group-hover:text-white'
+                        }`}>
+                          {cat.name}
+                        </h3>
+
+                        {/* Subtitle / Action hint */}
+                        <div className="relative mt-3 flex items-center justify-between">
+                          <p className={`text-sm transition-colors ${
+                            isActive ? 'text-cyan-300/80' : 'text-gray-500 group-hover:text-gray-300'
+                          }`}>
+                            {cat.hasChildren 
+                              ? `${Object.keys(cat.children).length} sub-categories` 
+                              : 'View posts'
+                            }
+                          </p>
+                          <ChevronRight size={16} className={`transition-all duration-300 ${
+                            isActive 
+                              ? 'text-cyan-400 translate-x-0 opacity-100' 
+                              : 'text-gray-500 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 group-hover:text-cyan-400'
+                          }`} />
                         </div>
                       </div>
                     </motion.div>
                   );
                 })}
-              </AnimatePresence>
-            </motion.div>
+              </motion.div>
+            </AnimatePresence>
 
-            {categories.length > INITIAL_VISIBLE_CATS && (
+            {currentCategories.length > INITIAL_VISIBLE_CATS && (
               <motion.button
                 layout
                 onClick={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
-                className="self-center flex items-center gap-3 px-6 py-3 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-cyan-500/30 transition-all group"
+                className="self-center flex items-center gap-3 px-6 py-3 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-cyan-500/30 transition-all group mt-2"
               >
                 <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-cyan-400 transition-colors">
                   {isCategoriesExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 </div>
                 <span className="text-xs font-mono text-gray-400 group-hover:text-white uppercase tracking-widest">
-                  {isCategoriesExpanded ? 'Show Less' : `+${categories.length - INITIAL_VISIBLE_CATS} More Modules`}
+                  {isCategoriesExpanded ? 'Show Less' : `+${currentCategories.length - INITIAL_VISIBLE_CATS} More Categories`}
                 </span>
               </motion.button>
             )}
           </motion.div>
         )}
 
+        {/* Recent Entries Section */}
         <motion.div
-          initial="hidden"
-          animate={isBooting ? 'hidden' : 'visible'}
-          variants={{
-            hidden: { opacity: 0 },
-            visible: {
-              opacity: 1,
-              transition: {
-                staggerChildren: 0.1,
-                delayChildren: 0.5,
-              },
-            },
-          }}
-          className="grid grid-cols-1 md:grid-cols-12 gap-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={isBooting ? { opacity: 0 } : { opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="space-y-6"
         >
-          <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }} className="md:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                icon: Clock,
-                label: 'Last Build',
-                value: new Date(siteConfig.build.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                color: 'text-blue-400',
-              },
-              {
-                icon: GitCommit,
-                label: t.totalPosts,
-                value: (Object.values(files) as FileSystemItem[]).filter(f => f.name.endsWith('.md') && f.parentId?.includes('post')).length,
-                color: 'text-purple-400',
-              },
-              {
-                icon: Activity,
-                label: 'System Version',
-                value: `v${siteConfig.build.version}`,
-                color: 'text-emerald-400',
-              },
-            ].map((stat, idx) => (
-              <div key={idx} className="bg-[#0f172a]/40 border border-white/5 p-5 rounded-2xl flex items-center gap-5 hover:border-white/10 hover:bg-white/5 transition-all group backdrop-blur-sm">
-                <div className={`p-3 rounded-xl bg-black/40 ${stat.color} shadow-inner group-hover:scale-110 transition-transform`}>
-                  <stat.icon size={20} />
-                </div>
-                <div>
-                  <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-1">{stat.label}</div>
-                  <div className="text-xl font-mono font-medium text-gray-100">{stat.value}</div>
-                </div>
-              </div>
-            ))}
-          </motion.div>
-
-          <motion.div variants={{ hidden: { x: -20, opacity: 0 }, visible: { x: 0, opacity: 1 } }} className="md:col-span-12 space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-cyan-500/80 uppercase tracking-widest flex items-center gap-2">
                 <ArrowRight size={14} /> {activeTag ? `Filtered: #${activeTag}` : t.recentEntries}
@@ -336,7 +624,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFil
                 </div>
               ))}
             </div>
-          </motion.div>
         </motion.div>
       </div>
     </motion.div>

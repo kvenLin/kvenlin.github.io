@@ -3,7 +3,7 @@ title: Google获取赠送金和Gemini3使用教程
 date: 2025-12-02
 tags: [google, gemini3]
 categories: 
-  - tutorial
+  - 教程
 ---
 # Google获取赠送金和Gemini3使用教程
 
