@@ -176,14 +176,15 @@ tags: [React, TypeScript]
 本项目提供了一个类似于 Hexo 的命令行工具，用于快速创建新文章。
 
 ```bash
-npm run new "文章标题"
+npm run new "文章标题" -- --categories "教程/github"
 ```
 
 **功能说明**：
 1.  自动在 `posts/` 目录下生成 Markdown 文件。
 2.  文件名格式：`YYYY-MM-DD-文章标题.md`。
 3.  自动填充 Frontmatter（标题、日期、标签等）和初始内容。
-4.  文件生成后，启动项目即可在列表中看到并进行编辑。
+4.  通过 `--categories`（或 `-c`）传入多级分类，例如 `教程/github/入门`；脚本会在 `posts/` 下创建对应文件夹结构，并将多级路径写入 Frontmatter。
+5.  文件生成后，启动项目即可在列表中看到并进行编辑。
 
 ---
 

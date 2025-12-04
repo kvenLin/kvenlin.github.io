@@ -14,6 +14,11 @@ interface ParsedPost {
   filename: string;
 }
 
+interface LoadPostsResult {
+  items: FileSystemItem[];
+  rootChildren: string[];
+}
+
 // Simple Front Matter Parser (Regex based)
 const parseFrontMatter = (fileContent: string): ParsedPost => {
   const frontMatterRegex = /^---\s*([\s\S]*?)\s*---\s*([\s\S]*)$/;
@@ -91,39 +96,96 @@ const parseFrontMatter = (fileContent: string): ParsedPost => {
   return { metadata, content, filename: '' };
 };
 
-export const loadPosts = async (): Promise<FileSystemItem[]> => {
-  // Vite's import.meta.glob to get raw content
-  const modules = import.meta.glob('/posts/*.md', { query: '?raw', import: 'default' });
-  
-  const posts: FileSystemItem[] = [];
+export const loadPosts = async (): Promise<LoadPostsResult> => {
+  const modules = import.meta.glob('/posts/**/*.md', { query: '?raw', import: 'default' });
 
-  for (const path in modules) {
-    const loadContent = modules[path] as () => Promise<string>;
+  const folderMap: Record<string, FileSystemItem> = {};
+  const fileItems: FileSystemItem[] = [];
+  const rootChildren = new Set<string>();
+
+  const pushChild = (parentId: string, childId: string) => {
+    if (parentId === 'folder-posts') {
+      rootChildren.add(childId);
+      return;
+    }
+    const parent = folderMap[parentId];
+    if (!parent) return;
+    parent.children = parent.children || [];
+    if (!parent.children.includes(childId)) {
+      parent.children.push(childId);
+    }
+  };
+
+  const normalizeIdSegment = (segment: string) =>
+    segment
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9\-_,\u4e00-\u9fa5]/g, '');
+
+  const getFolderId = (segments: string[]) =>
+    segments.length
+      ? `folder-posts-${segments.map(normalizeIdSegment).join('-')}`
+      : 'folder-posts';
+
+  const ensureFolder = (segments: string[]): string => {
+    if (!segments.length) return 'folder-posts';
+    const folderId = getFolderId(segments);
+    if (!folderMap[folderId]) {
+      const parentSegments = segments.slice(0, -1);
+      const parentId = ensureFolder(parentSegments);
+      folderMap[folderId] = {
+        id: folderId,
+        name: segments[segments.length - 1],
+        type: FileType.FOLDER,
+        parentId,
+        children: [],
+        isOpen: true
+      };
+      pushChild(parentId, folderId);
+    }
+    return folderId;
+  };
+
+  for (const fullPath in modules) {
+    const loadContent = modules[fullPath] as () => Promise<string>;
     const rawContent = await loadContent();
-    const filename = path.split('/').pop() || '';
-    
-    const { metadata, content } = parseFrontMatter(rawContent);
-    
-    // Extract ID from filename (e.g. 2023-11-15-mastering-hooks.md -> post-mastering-hooks)
-    // Or just use the full filename as ID
-    const id = `post-${filename.replace('.md', '').replace(/^\d{4}-\d{2}-\d{2}-/, '')}`;
+    const relativePath = fullPath.replace(/^\/posts\//, '');
+    const segments = relativePath.split('/');
+    const filename = segments.pop() || '';
+    const folderSegments = segments.filter(Boolean);
 
-    posts.push({
+    const { metadata, content } = parseFrontMatter(rawContent);
+    const parentId = ensureFolder(folderSegments);
+    const id = `post-${relativePath
+      .replace(/\.md$/, '')
+      .replace(/[^a-zA-Z0-9\/_\-\u4e00-\u9fa5]/g, '-')
+      .replace(/[\/]+/g, '-')
+      .replace(/-+/g, '-')
+      .toLowerCase()}`;
+
+    const fileItem: FileSystemItem = {
       id,
-      name: filename, 
+      name: filename,
       type: FileType.FILE,
-      parentId: 'folder-posts',
+      parentId,
       date: metadata.date,
-      tags: [...(metadata.tags || [])], // Keep tags pure
-      categories: metadata.categories || [], // Store categories separately
+      tags: [...(metadata.tags || [])],
+      categories: metadata.categories || folderSegments,
       content: content.trim()
-    });
+    };
+
+    fileItems.push(fileItem);
+    pushChild(parentId, fileItem.id);
   }
 
-  // Sort by date descending
-  return posts.sort((a, b) => {
-      return new Date(b.date || '').getTime() - new Date(a.date || '').getTime();
+  const sortedFiles = fileItems.sort((a, b) => {
+    return new Date(b.date || '').getTime() - new Date(a.date || '').getTime();
   });
+
+  return {
+    items: [...Object.values(folderMap), ...sortedFiles],
+    rootChildren: Array.from(rootChildren)
+  };
 };
 
 export const loadSingleFile = async (path: string, overrides: Partial<FileSystemItem> = {}): Promise<FileSystemItem | null> => {

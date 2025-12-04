@@ -58,7 +58,7 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
         try {
-            const [posts, readme, resume] = await Promise.all([
+            const [postsResult, readme, resume] = await Promise.all([
                 loadPosts(),
                 loadSingleFile('README.md', { id: 'file-readme', parentId: 'root', tags: ['system'] }),
                 loadSingleFile('resume.md', { id: 'file-resume', name: 'resume.md', parentId: 'folder-public', tags: ['career'] })
@@ -66,16 +66,16 @@ function App() {
             
             setFileSystem(prev => {
                 const newFileSystem = { ...prev };
+                const { items, rootChildren } = postsResult;
                 
-                // Update posts
-                const postIds = posts.map(p => p.id);
-                posts.forEach(post => {
-                    newFileSystem[post.id] = post;
+                items.forEach(item => {
+                    newFileSystem[item.id] = item;
                 });
+
                 if (newFileSystem['folder-posts']) {
                     newFileSystem['folder-posts'] = {
                         ...newFileSystem['folder-posts'],
-                        children: postIds
+                        children: rootChildren
                     };
                 }
 
