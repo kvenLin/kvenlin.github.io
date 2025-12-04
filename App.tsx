@@ -9,7 +9,7 @@ import { Terminal } from './components/Terminal';
 import { CommandPalette } from './components/CommandPalette';
 import { BootSequence } from './components/BootSequence';
 import { Background } from './components/Background';
-import { TerminalSquare, Menu, ArrowUp, ArrowDown, Moon, Sun, LayoutGrid, ChevronLeft, ChevronRight } from 'lucide-react';
+import { TerminalSquare, Menu, ArrowUp, ArrowDown, Moon, Sun, LayoutGrid, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react';
 import { Language, translations } from './translations';
 import { loadPosts, loadSingleFile } from './utils/postLoader';
 
@@ -25,6 +25,7 @@ function App() {
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [isFloatingMenuOpen, setIsFloatingMenuOpen] = useState(false);
+  const [isShortcutGuideOpen, setIsShortcutGuideOpen] = useState(false);
   const [isBooting, setIsBooting] = useState(true);
   const [language, setLanguage] = useState<Language>('zh');
   const [theme, setTheme] = useState<Theme>(() => {
@@ -165,6 +166,8 @@ function App() {
   // Keyboard Shortcuts (Including ESC handling)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+        const key = e.key.toLowerCase();
+
         // Global ESC Handler
         if (e.key === 'Escape') {
             // Priority 1: Command Palette (If it doesn't stop propagation itself, catch it here)
@@ -189,13 +192,27 @@ function App() {
             }
         }
 
+        // Sidebar toggle shortcut (Cmd/Ctrl + Shift + L)
+        if ((e.metaKey || e.ctrlKey) && e.shiftKey && key === 'l') {
+            e.preventDefault();
+            setIsSidebarOpen(prev => !prev);
+            return;
+        }
+
+        // Terminal toggle shortcut (Cmd/Ctrl + Shift + P)
+        if ((e.metaKey || e.ctrlKey) && e.shiftKey && key === 'p') {
+            e.preventDefault();
+            setIsTerminalOpen(prev => !prev);
+            return;
+        }
+
         // Command Palette Toggle (Ctrl+K / Cmd+K)
-        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        if ((e.metaKey || e.ctrlKey) && key === 'k') {
             e.preventDefault();
             setIsPaletteOpen(prev => !prev);
         }
         // Toggle Sidebar (Ctrl+B / Cmd+B)
-        if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+        if ((e.metaKey || e.ctrlKey) && key === 'b') {
             e.preventDefault();
             setIsSidebarOpen(prev => !prev);
         }
@@ -203,6 +220,13 @@ function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isPaletteOpen, isTerminalOpen, activeTag, activeFileId]);
+
+  // Close shortcut guide when floating menu collapses
+  useEffect(() => {
+    if (!isFloatingMenuOpen) {
+      setIsShortcutGuideOpen(false);
+    }
+  }, [isFloatingMenuOpen]);
 
   // Sidebar resize listeners
   useEffect(() => {
@@ -528,10 +552,10 @@ function App() {
                      </motion.button>
 
                      {/* Terminal Toggle */}
-                     <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => setIsTerminalOpen(!isTerminalOpen)}
+                    <motion.button
+                       whileHover={{ scale: 1.1 }}
+                       whileTap={{ scale: 0.9 }}
+                       onClick={() => setIsTerminalOpen(!isTerminalOpen)}
                         className={`
                             p-3 rounded-full shadow-lg border backdrop-blur-md transition-all
                             ${isTerminalOpen 
@@ -539,11 +563,76 @@ function App() {
                                 : (theme === 'dark' ? 'bg-black/60 text-gray-400 border-white/10 hover:text-cyan-400 hover:border-cyan-400/50' : 'bg-white/90 text-gray-600 border-gray-200 hover:text-cyan-500 hover:border-cyan-400')}
                         `}
                      >
-                        <TerminalSquare size={20} />
-                     </motion.button>
-                 </motion.div>
-             )}
-         </AnimatePresence>
+                       <TerminalSquare size={20} />
+                    </motion.button>
+
+                    {/* Shortcut Guide */}
+                    <div
+                        className="relative flex items-center"
+                        onMouseEnter={() => setIsShortcutGuideOpen(true)}
+                        onMouseLeave={() => setIsShortcutGuideOpen(false)}
+                    >
+                        <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            className={`p-3 rounded-full shadow-lg border backdrop-blur-md transition-all flex items-center justify-center
+                                ${isShortcutGuideOpen
+                                    ? 'bg-cyan-600 text-white border-cyan-400 shadow-[0_0_15px_rgba(8,145,178,0.4)]'
+                                    : (theme === 'dark'
+                                        ? 'bg-black/60 text-gray-400 border-white/10 hover:text-cyan-300 hover:border-cyan-400/40'
+                                        : 'bg-white/90 text-gray-600 border-gray-200 hover:text-cyan-500 hover:border-cyan-400')}
+                            `}
+                            title="查看快捷键"
+                        >
+                            <HelpCircle size={20} />
+                        </motion.button>
+
+                        <AnimatePresence>
+                            {isShortcutGuideOpen && (
+                                <motion.div
+                                    key="shortcut-tooltip"
+                                    initial={{ opacity: 0, x: 12, scale: 0.95 }}
+                                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                                    exit={{ opacity: 0, x: 12, scale: 0.95 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="absolute right-full mr-4 top-1/2 -translate-y-1/2 w-64 rounded-2xl border border-white/10 bg-[#050b16]/80 text-gray-200 text-sm p-4 shadow-2xl backdrop-blur-2xl"
+                                >
+                                    <div className="flex items-center justify-between mb-3 text-xs uppercase tracking-widest text-cyan-300">
+                                        <span>快捷键</span>
+                                        <span className="text-[10px] text-gray-500">Shortcuts</span>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <p className="text-[11px] text-gray-500 mb-1">打开侧边栏</p>
+                                            <div className="flex items-center gap-2 text-xs font-mono">
+                                                <kbd className="shortcut-kbd">⌘</kbd>
+                                                <kbd className="shortcut-kbd">⇧</kbd>
+                                                <kbd className="shortcut-kbd">L</kbd>
+                                                <span className="text-gray-600">/</span>
+                                                <kbd className="shortcut-kbd">Ctrl</kbd>
+                                                <kbd className="shortcut-kbd">Shift</kbd>
+                                                <kbd className="shortcut-kbd">L</kbd>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="text-[11px] text-gray-500 mb-1">打开终端</p>
+                                            <div className="flex items-center gap-2 text-xs font-mono">
+                                                <kbd className="shortcut-kbd">⌘</kbd>
+                                                <kbd className="shortcut-kbd">⇧</kbd>
+                                                <kbd className="shortcut-kbd">P</kbd>
+                                                <span className="text-gray-600">/</span>
+                                                <kbd className="shortcut-kbd">Ctrl</kbd>
+                                                <kbd className="shortcut-kbd">Shift</kbd>
+                                                <kbd className="shortcut-kbd">P</kbd>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
 
          {/* Main Toggle Button */}
          <motion.button
@@ -559,7 +648,8 @@ function App() {
          >
             <LayoutGrid size={22} />
          </motion.button>
-      </div>
+
+       </div>
 
       {/* Terminal Overlay */}
       <AnimatePresence>
