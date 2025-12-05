@@ -143,15 +143,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFil
     }
     
     if (cat.hasChildren) {
-      // Has sub-categories, drill down with animation from clicked card
+      // Has sub-categories, drill down with lighter animation
       setExpandingFromIndex(index);
       setAnimDirection('enter');
-      // Small delay to allow exit animation
-      setTimeout(() => {
-        setCategoryPath([...categoryPath, cat.name]);
-        // Reset after animation starts
-        setTimeout(() => setExpandingFromIndex(null), 50);
-      }, 150);
+      // Use rAF to batch state changes，避免 setTimeout 延迟带来的跳帧
+      requestAnimationFrame(() => {
+        setCategoryPath(prev => [...prev, cat.name]);
+        setExpandingFromIndex(null);
+      });
     } else {
       // Leaf category, trigger filter
       onTagClick(cat.fullPath);
@@ -211,9 +210,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFil
     >
       <div className="max-w-6xl w-full space-y-12 mt-4 md:mt-10 pb-20">
         <motion.div
-          initial={{ y: 20, opacity: 0 }}
+          initial={{ y: 12, opacity: 0 }}
           animate={isBooting ? {} : { y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 0.28, delay: 0.12, ease: [0.4, 0, 0.2, 1] }}
           className="flex flex-col lg:flex-row items-stretch justify-between gap-8 p-8 rounded-3xl bg-gradient-to-br from-[#0b1120]/90 via-[#090f1d]/95 to-[#050912]/95 border border-white/5 relative overflow-hidden group shadow-2xl backdrop-blur-xl"
         >
           <div className="space-y-6 text-center lg:text-left z-10 flex-1">
@@ -257,9 +256,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFil
 
           <motion.div
             className="w-full lg:w-[340px] relative"
-            initial={{ opacity: 0, x: 30 }}
+            initial={{ opacity: 0, x: 18 }}
             animate={isBooting ? {} : { opacity: 1, x: 0 }}
-            transition={{ delay: 0.3, type: 'spring', stiffness: 90 }}
+            transition={{ delay: 0.16, duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
           >
             <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-blue-600/10 to-transparent blur-3xl opacity-40" />
             <motion.div
@@ -320,8 +319,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFil
             visible: {
               opacity: 1,
               transition: {
-                staggerChildren: 0.1,
-                delayChildren: 0.2,
+                staggerChildren: 0.06,
+                delayChildren: 0.1,
               },
             },
           }}
@@ -349,7 +348,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFil
           ].map((stat, idx) => (
             <motion.div
               key={idx}
-              variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}
+              variants={{ hidden: { y: 14, opacity: 0 }, visible: { y: 0, opacity: 1 } }}
               className="bg-[#0f172a]/40 border border-white/5 p-5 rounded-2xl flex items-center gap-5 hover:border-white/10 hover:bg-white/5 transition-all group backdrop-blur-sm"
             >
               <div className={`p-3 rounded-xl bg-black/40 ${stat.color} shadow-inner group-hover:scale-110 transition-transform`}>
@@ -411,7 +410,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFil
         )}
 
         {currentCategories.length > 0 && (
-          <motion.div layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex flex-col gap-4">
+          <motion.div layout="size" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14, duration: 0.22 }} className="flex flex-col gap-4">
              <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-cyan-500/80 uppercase tracking-widest flex items-center gap-2">
                 <Folder size={14} /> Categories
@@ -450,13 +449,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFil
             <AnimatePresence mode="wait">
               <motion.div
                 key={categoryPath.join('/')}
-                initial={animDirection === 'enter' ? { opacity: 0, scale: 0.5, y: 50 } : { opacity: 0, scale: 1.1, y: -30 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={animDirection === 'enter' ? { opacity: 0, scale: 1.1, y: -30 } : { opacity: 0, scale: 0.5, y: 50 }}
-                transition={{ 
-                  duration: 0.4, 
+                initial={animDirection === 'enter' ? { opacity: 0, y: 26 } : { opacity: 0, y: -18 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={animDirection === 'enter' ? { opacity: 0, y: -18 } : { opacity: 0, y: 26 }}
+                transition={{
+                  duration: 0.22,
                   ease: [0.4, 0, 0.2, 1],
-                  staggerChildren: 0.05
                 }}
                 className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"
               >
@@ -469,14 +467,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFil
                   return (
                     <motion.div
                       key={cat.fullPath}
-                      initial={{ opacity: 0, scale: 0.8, y: 30 }}
+                      initial={{ opacity: 0, y: 16 }}
                       animate={{ 
-                        opacity: isBeingClicked ? 0.5 : 1, 
-                        scale: isBeingClicked ? 1.05 : 1, 
+                        opacity: isBeingClicked ? 0.65 : 1, 
+                        scale: isBeingClicked ? 1.02 : 1, 
                         y: 0,
-                        transition: { delay: index * 0.03, duration: 0.3 }
+                        transition: { duration: 0.18, ease: [0.4, 0, 0.2, 1] }
                       }}
-                      whileHover={{ scale: 1.02, y: -4 }}
+                      whileHover={{ scale: 1.01, y: -2 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleCategoryClick(cat, index)}
                       className="group relative w-full cursor-pointer"

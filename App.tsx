@@ -38,6 +38,8 @@ function App() {
   const [isNearCollapsedEdge, setIsNearCollapsedEdge] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const sidebarResizeState = useRef({ startX: 0, startWidth: SIDEBAR_DEFAULT_WIDTH });
+  const lastNearLeftEdgeRef = useRef(false);
+  const lastNearCollapsedEdgeRef = useRef(false);
 
   const t = translations[language];
 
@@ -131,15 +133,27 @@ function App() {
             containerRef.current.style.setProperty('--mouse-y', `${mouseY}px`);
         }
         
-        // 检测鼠标是否靠近侧边栏边缘
+        // 检测鼠标是否靠近侧边栏边缘，仅在状态变化时触发 setState，避免持续重渲染
         if (isSidebarOpen) {
             const nearEdge = mouseX <= sidebarWidth + EDGE_THRESHOLD && mouseX >= sidebarWidth - 20;
-            setIsNearLeftEdge(nearEdge);
-            if (isNearCollapsedEdge) setIsNearCollapsedEdge(false);
+            if (nearEdge !== lastNearLeftEdgeRef.current) {
+                lastNearLeftEdgeRef.current = nearEdge;
+                setIsNearLeftEdge(nearEdge);
+            }
+            if (lastNearCollapsedEdgeRef.current) {
+                lastNearCollapsedEdgeRef.current = false;
+                setIsNearCollapsedEdge(false);
+            }
         } else {
             const nearCollapsed = mouseX <= EDGE_THRESHOLD;
-            setIsNearCollapsedEdge(nearCollapsed);
-            if (isNearLeftEdge) setIsNearLeftEdge(false);
+            if (nearCollapsed !== lastNearCollapsedEdgeRef.current) {
+                lastNearCollapsedEdgeRef.current = nearCollapsed;
+                setIsNearCollapsedEdge(nearCollapsed);
+            }
+            if (lastNearLeftEdgeRef.current) {
+                lastNearLeftEdgeRef.current = false;
+                setIsNearLeftEdge(false);
+            }
         }
         
         rafId = null;
@@ -363,13 +377,13 @@ function App() {
          animate={{ 
             width: isSidebarOpen ? sidebarWidth : 0, 
             opacity: isSidebarOpen ? 1 : 0,
-            marginRight: isSidebarOpen ? 0 : -20 // Slightly pull content to avoid jump
+            marginRight: isSidebarOpen ? 0 : -12 // Slightly pull content to avoid jump
          }}
          transition={isResizingSidebar
             ? { duration: 0, ease: 'linear' }
-            : { duration: 0.4, ease: [0.4, 0, 0.2, 1] } // Smooth cubic-bezier
+            : { duration: 0.22, ease: [0.4, 0, 0.2, 1] }
          }
-         className="z-20 h-full py-4 pl-4 hidden md:flex flex-col overflow-hidden whitespace-nowrap relative"
+         className="z-20 h-full py-4 pl-4 hidden md:flex flex-col overflow-hidden whitespace-nowrap relative will-change-[width,opacity]"
       >
         <motion.div 
             className="flex-1 glass-panel rounded-2xl overflow-hidden flex flex-col shadow-2xl relative border-white/5"

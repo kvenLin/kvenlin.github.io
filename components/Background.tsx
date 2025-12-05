@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Theme } from '../types';
 
@@ -28,6 +28,20 @@ export const Background: React.FC<BackgroundProps> = ({ theme }) => {
   const starsRef = useRef<Star[]>([]);
   const shootingStarsRef = useRef<ShootingStar[]>([]);
   const animationFrameRef = useRef<number>(0);
+  const lastFrameTimeRef = useRef<number>(0);
+  const resizeRafRef = useRef<number | null>(null);
+  const lastCanvasSizeRef = useRef<{ w: number; h: number } | null>(null);
+  const isVisibleRef = useRef<boolean>(true);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  // Detect prefers-reduced-motion to avoid过多动画
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setPrefersReducedMotion(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
 
   // Initialize stars
   useEffect(() => {
@@ -37,14 +51,10 @@ export const Background: React.FC<BackgroundProps> = ({ theme }) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      initStars();
-    };
-
     const initStars = () => {
-      const starCount = Math.floor((window.innerWidth * window.innerHeight) / 3000);
+      const area = window.innerWidth * window.innerHeight;
+      const density = prefersReducedMotion ? 12000 : 6000;
+      const starCount = Math.min(400, Math.max(80, Math.floor(area / density)));
       starsRef.current = [];
       for (let i = 0; i < starCount; i++) {
         starsRef.current.push({
@@ -57,13 +67,33 @@ export const Background: React.FC<BackgroundProps> = ({ theme }) => {
       }
     };
 
-    window.addEventListener('resize', resizeCanvas);
+    const resizeCanvas = () => {
+      const nextW = window.innerWidth;
+      const nextH = window.innerHeight;
+      const lastSize = lastCanvasSizeRef.current;
+      if (lastSize && lastSize.w === nextW && lastSize.h === nextH) return;
+      canvas.width = nextW;
+      canvas.height = nextH;
+      lastCanvasSizeRef.current = { w: nextW, h: nextH };
+      initStars();
+    };
+
+    const handleResize = () => {
+      if (resizeRafRef.current) return;
+      resizeRafRef.current = requestAnimationFrame(() => {
+        resizeRafRef.current = null;
+        resizeCanvas();
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
     resizeCanvas();
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('resize', handleResize);
+      if (resizeRafRef.current) cancelAnimationFrame(resizeRafRef.current);
     };
-  }, []);
+  }, [prefersReducedMotion]);
 
   // Animation Loop
   useEffect(() => {
@@ -72,7 +102,23 @@ export const Background: React.FC<BackgroundProps> = ({ theme }) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const animate = () => {
+    const frameInterval = prefersReducedMotion ? 1000 / 24 : 1000 / 45; // cap fps to降低GPU占用
+
+    const animate = (time: number) => {
+      if (!isVisibleRef.current) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+        return;
+      }
+      if (!lastFrameTimeRef.current) {
+        lastFrameTimeRef.current = time;
+      }
+      const delta = time - lastFrameTimeRef.current;
+      if (delta < frameInterval) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+        return;
+      }
+      lastFrameTimeRef.current = time;
+
       if (!canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -93,8 +139,8 @@ export const Background: React.FC<BackgroundProps> = ({ theme }) => {
         ctx.fill();
       });
 
-      // Randomly spawn shooting stars
-      if (Math.random() < 0.005 && shootingStarsRef.current.length < 3) {
+      // Randomly spawn shooting stars (reduced on低动画模式)
+      if (!prefersReducedMotion && Math.random() < 0.003 && shootingStarsRef.current.length < 2) {
         shootingStarsRef.current.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height * 0.5,
@@ -127,12 +173,21 @@ export const Background: React.FC<BackgroundProps> = ({ theme }) => {
       animationFrameRef.current = requestAnimationFrame(animate);
     };
 
-    animate();
+    animationFrameRef.current = requestAnimationFrame(animate);
 
     return () => {
       cancelAnimationFrame(animationFrameRef.current);
     };
-  }, [theme]);
+  }, [theme, prefersReducedMotion]);
+
+  // Pause when页面不可见
+  useEffect(() => {
+    const onVisibility = () => {
+      isVisibleRef.current = document.visibilityState === 'visible';
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, []);
 
   const blobColors = theme === 'dark' 
     ? ['bg-blue-500/30', 'bg-cyan-500/30', 'bg-purple-500/30']

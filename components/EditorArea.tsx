@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X, Hash, List, PanelRightClose } from 'lucide-react';
 import { FileSystemItem, Theme } from '../types';
 import { IconHelper } from './IconHelper';
@@ -53,6 +53,8 @@ export const EditorArea: React.FC<EditorAreaProps> = React.memo(({
 }) => {
   const activeFile = activeFileId ? files[activeFileId] : null;
   const contentRef = useRef<HTMLDivElement>(null);
+  const progressBarRef = useRef<HTMLDivElement>(null);
+  const scrollRafRef = useRef<number | null>(null);
   const imageEntriesRef = useRef<ImageEntry[]>([]);
   const imageIdCounterRef = useRef(0);
   const panStateRef = useRef<{ pointerId: number; startX: number; startY: number; offsetX: number; offsetY: number } | null>(null);
@@ -237,15 +239,41 @@ export const EditorArea: React.FC<EditorAreaProps> = React.memo(({
     };
   }, [previewState]);
 
-  const { scrollYProgress } = useScroll({ container: contentRef });
-  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
+  const handleScrollProgress = useCallback(() => {
+    if (scrollRafRef.current !== null) return;
+    scrollRafRef.current = requestAnimationFrame(() => {
+      scrollRafRef.current = null;
+      const container = contentRef.current;
+      const bar = progressBarRef.current;
+      if (!container || !bar) return;
+      const max = container.scrollHeight - container.clientHeight;
+      const progress = max > 0 ? container.scrollTop / max : 0;
+      bar.style.transform = `scaleX(${progress})`;
+    });
+  }, []);
+
+  useEffect(() => {
+    const container = contentRef.current;
+    if (!container) return;
+    container.addEventListener('scroll', handleScrollProgress, { passive: true });
+    // 初始化一次
+    handleScrollProgress();
+    return () => {
+      container.removeEventListener('scroll', handleScrollProgress);
+      if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current);
+    };
+  }, [handleScrollProgress]);
 
   const renderMarkdown = Boolean(activeFile?.name.endsWith('.md'));
 
   return (
     <motion.div className="flex-1 flex flex-col glass-panel rounded-2xl overflow-hidden shadow-2xl h-full border border-white/5 bg-[#0f172a]/40 backdrop-blur-3xl relative">
       {activeFile && (
-        <motion.div className="absolute top-0 left-0 right-0 h-0.5 bg-cyan-500 z-50 origin-left" style={{ scaleX }} />
+        <div
+          ref={progressBarRef}
+          className="absolute top-0 left-0 right-0 h-0.5 bg-cyan-500 z-50 origin-left"
+          style={{ transform: 'scaleX(0)' }}
+        />
       )}
 
       {openFiles.length > 0 && (
