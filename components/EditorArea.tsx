@@ -393,63 +393,61 @@ export const EditorArea: React.FC<EditorAreaProps> = React.memo(({
               {renderMarkdown && tocItems.length > 0 && (
                 <div className="hidden xl:block">
                   <div className="fixed top-32 right-6 z-40">
-                    <AnimatePresence mode="wait">
-                      {isTocOpen ? (
-                        <motion.div
-                          key="toc-panel"
-                          initial={{ opacity: 0, x: 20, scale: 0.95 }}
-                          animate={{ opacity: 1, x: 0, scale: 1 }}
-                          exit={{ opacity: 0, x: 20, scale: 0.95 }}
-                          transition={{ duration: 0.2, ease: 'easeOut' }}
-                          className={`w-72 rounded-2xl border shadow-2xl backdrop-blur-2xl ${tocFixedClasses}`}
-                        >
-                          <div
-                            className={`flex items-center justify-between px-5 py-4 border-b cursor-pointer transition-colors ${isDark ? 'border-white/5 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-100'}`}
-                            onClick={() => setIsTocOpen(false)}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-300' : 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-600'}`}>
-                                <List size={18} />
-                              </div>
-                              <div>
-                                <p className={`text-[11px] tracking-[0.4em] uppercase ${isDark ? 'text-cyan-400/70' : 'text-cyan-600/80'}`}>TOC</p>
-                                <h4 className={`text-base font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>文章导航</h4>
-                              </div>
-                            </div>
-                            <PanelRightClose size={16} className={`transition-colors ${isDark ? 'text-gray-500 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`} />
+                    <motion.div
+                      initial={false}
+                      animate={isTocOpen ? { opacity: 1, x: 0, scale: 1, pointerEvents: 'auto' } : { opacity: 0, x: 20, scale: 0.95, pointerEvents: 'none' }}
+                      transition={{ duration: 0.18, ease: 'easeOut' }}
+                      className={`w-72 rounded-2xl border shadow-2xl backdrop-blur-2xl ${tocFixedClasses}`}
+                    >
+                      <div
+                        className={`flex items-center justify-between px-5 py-4 border-b cursor-pointer transition-colors ${isDark ? 'border-white/5 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-100'}`}
+                        onClick={() => setIsTocOpen(false)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-300' : 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-600'}`}>
+                            <List size={18} />
                           </div>
-                          <nav className="max-h-[60vh] overflow-y-auto px-3 py-2 space-y-1 custom-scrollbar">
-                            {tocItems.map(item => (
-                              <button
-                                key={item.id}
-                                onClick={e => handleAnchorNavigation(e, item.id)}
-                                className={`w-full flex items-center gap-3 rounded-xl py-2 px-2 text-sm transition-all text-left ${isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
-                                style={{ paddingLeft: `${(item.level - 1) * 14}px` }}
-                              >
-                                <span className={`text-[11px] font-mono uppercase tracking-widest w-8 shrink-0 ${isDark ? 'text-cyan-500/70' : 'text-cyan-600/80'}`}>
-                                  {item.level === 1 ? 'H1' : item.level === 2 ? 'H2' : 'H3'}
-                                </span>
-                                <span className="truncate flex-1">{item.text}</span>
-                              </button>
-                            ))}
-                          </nav>
-                        </motion.div>
-                      ) : (
-                        <motion.button
-                          key="toc-trigger"
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.8 }}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => setIsTocOpen(true)}
-                          className="w-12 h-12 rounded-xl bg-[#070c16]/90 border border-white/10 shadow-lg backdrop-blur-xl flex items-center justify-center text-cyan-400 hover:text-cyan-300 hover:border-cyan-500/30 hover:shadow-[0_0_20px_rgba(6,182,212,0.15)] transition-all"
-                          title="展开目录导航"
-                        >
-                          <List size={20} />
-                        </motion.button>
-                      )}
-                    </AnimatePresence>
+                          <div>
+                            <p className={`text-[11px] tracking-[0.4em] uppercase ${isDark ? 'text-cyan-400/70' : 'text-cyan-600/80'}`}>TOC</p>
+                            <h4 className={`text-base font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>文章导航</h4>
+                          </div>
+                        </div>
+                        <PanelRightClose size={16} className={`transition-colors ${isDark ? 'text-gray-500 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`} />
+                      </div>
+                      <nav className="max-h-[60vh] overflow-y-auto px-3 py-2 space-y-1 custom-scrollbar">
+                        {tocItems.map(item => (
+                          <button
+                            key={item.id}
+                            onClick={e => handleAnchorNavigation(e, item.id)}
+                            className={`w-full flex items-center gap-3 rounded-xl py-2 px-2 text-sm transition-all text-left ${isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+                            style={{ paddingLeft: `${(item.level - 1) * 14}px` }}
+                          >
+                            <span className={`text-[11px] font-mono uppercase tracking-widest w-8 shrink-0 ${isDark ? 'text-cyan-500/70' : 'text-cyan-600/80'}`}>
+                              {item.level === 1 ? 'H1' : item.level === 2 ? 'H2' : 'H3'}
+                            </span>
+                            <span className="truncate flex-1">{item.text}</span>
+                          </button>
+                        ))}
+                      </nav>
+                    </motion.div>
+
+                    <motion.button
+                      initial={false}
+                      animate={isTocOpen ? { opacity: 0, scale: 0.9, pointerEvents: 'none' } : { opacity: 1, scale: 1, pointerEvents: 'auto' }}
+                      transition={{ duration: 0.18, ease: 'easeOut' }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setIsTocOpen(true)}
+                      className={`w-12 h-12 rounded-xl backdrop-blur-xl flex items-center justify-center transition-all ${
+                        isDark
+                          ? 'bg-[#070c16]/90 border border-white/10 shadow-lg text-cyan-400 hover:text-cyan-300 hover:border-cyan-500/30 hover:shadow-[0_0_20px_rgba(6,182,212,0.15)]'
+                          : 'bg-[#e6ecf5]/95 border border-slate-300/70 shadow-lg text-cyan-600 hover:text-cyan-700 hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(59,130,246,0.12)]'
+                      }`}
+                      title="展开目录导航"
+                      style={{ position: 'absolute', top: 0, right: 0 }}
+                    >
+                      <List size={20} />
+                    </motion.button>
                   </div>
                 </div>
               )}

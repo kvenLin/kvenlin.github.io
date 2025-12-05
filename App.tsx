@@ -357,7 +357,7 @@ function App() {
         `}
     >
       <AnimatePresence>
-        {isBooting && <BootSequence onComplete={() => setIsBooting(false)} />}
+        {isBooting && <BootSequence onComplete={() => setIsBooting(false)} theme={theme} />}
       </AnimatePresence>
 
       {/* Background Ambience */}

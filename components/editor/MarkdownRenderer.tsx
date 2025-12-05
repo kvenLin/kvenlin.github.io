@@ -29,7 +29,7 @@ const flattenText = (children: React.ReactNode): string => {
   return '';
 };
 
-export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
+const MarkdownRendererComponent: React.FC<MarkdownRendererProps> = ({
   content,
   activeFile,
   renderSlugger,
@@ -163,5 +163,13 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   >
     {content || ''}
   </ReactMarkdown>
-);
+  );
 };
+
+export const MarkdownRenderer = React.memo(
+  MarkdownRendererComponent,
+  (prev, next) =>
+    prev.content === next.content &&
+    prev.activeFile?.id === next.activeFile?.id &&
+    prev.theme === next.theme,
+);
