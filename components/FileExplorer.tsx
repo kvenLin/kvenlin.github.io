@@ -103,12 +103,14 @@ const FileTreeItem = React.memo<FileTreeItemProps>(({
           {!isFolder && <div className="w-[14px]" />} 
         </span>
         
-        <IconHelper 
-          name={item.name} 
-          isFolder={isFolder} 
-          isOpen={item.isOpen || !!filterTag} 
-          className={`mr-2 transition-opacity ${isActive ? 'opacity-100 drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]' : 'opacity-70'}`}
-        />
+        <div className="mr-2 w-4 h-4 flex items-center justify-center">
+          <IconHelper 
+            name={item.name} 
+            isFolder={isFolder} 
+            isOpen={item.isOpen || !!filterTag} 
+            className={`transition-opacity ${isActive ? 'opacity-100 drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]' : 'opacity-70'}`}
+          />
+        </div>
         
         <span className={`truncate font-medium ${isMatch ? 'text-cyan-300' : ''}`}>{displayName}</span>
       </motion.div>
