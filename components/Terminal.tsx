@@ -291,33 +291,58 @@ export const Terminal: React.FC<TerminalProps> = ({ onClose, files, onOpenFile, 
     }
   };
 
+  const isDark = theme === 'dark';
+  const rootClasses = isDark
+    ? 'bg-black/90 text-gray-200'
+    : 'bg-white/90 text-slate-700 border border-slate-200 shadow-2xl';
+  const headerClasses = isDark
+    ? 'bg-white/5 border-white/5 text-gray-500'
+    : 'bg-white border-b border-slate-200 text-slate-500';
+  const badgeClasses = isDark
+    ? 'bg-blue-900/30 text-blue-400 border border-blue-500/20'
+    : 'bg-slate-100 text-slate-500 border border-slate-200';
+  const bodyLineClasses = (line: string) =>
+    line.startsWith('➜')
+      ? (isDark ? 'text-cyan-400' : 'text-cyan-600') + ' font-bold mt-3'
+      : isDark
+        ? 'text-gray-400 ml-4 leading-relaxed'
+        : 'text-slate-500 ml-4 leading-relaxed';
+  const promptClasses = isDark ? 'text-cyan-400' : 'text-cyan-600';
+  const pathClasses = isDark ? 'text-purple-400' : 'text-purple-600';
+  const inputClasses = isDark
+    ? 'bg-transparent border-none outline-none text-gray-100 font-normal caret-cyan-400'
+    : 'bg-transparent border-none outline-none text-slate-700 font-normal caret-cyan-600 placeholder:text-slate-400';
+
   return (
-    <div className="h-full flex flex-col font-mono text-sm bg-black/90 text-gray-200" onClick={() => inputRef.current?.focus()}>
+    <div
+      className={`h-full flex flex-col font-mono text-sm transition-colors duration-300 ${rootClasses}`}
+      onClick={() => inputRef.current?.focus()}
+    >
       {/* Terminal Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white/5 border-b border-white/5 select-none">
+      <div className={`flex items-center justify-between px-4 py-3 select-none transition-colors duration-300 ${headerClasses}`}>
         <div className="flex items-center gap-2">
-            <div className="text-xs text-gray-500 font-bold">TERMINAL</div>
-            <div className="px-2 py-0.5 rounded text-[10px] bg-blue-900/30 text-blue-400 border border-blue-500/20">zsh</div>
+            <div className="text-xs font-bold tracking-widest">TERMINAL</div>
+            <div className={`px-2 py-0.5 rounded text-[10px] uppercase ${badgeClasses}`}>zsh</div>
         </div>
         <div className="flex items-center gap-4">
-            <Maximize2 size={14} className="text-gray-500 hover:text-white cursor-pointer" />
-            <X size={14} className="text-gray-500 hover:text-red-400 cursor-pointer" onClick={onClose} />
+            <Maximize2 size={14} className="cursor-pointer transition-colors duration-200 hover:text-cyan-400" />
+            <X size={14} className="cursor-pointer transition-colors duration-200 hover:text-red-400" onClick={onClose} />
         </div>
       </div>
       
       {/* Terminal Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-1 scrollbar-hide font-mono">
         {history.map((line, i) => (
-          <div key={i} className={`${line.startsWith('➜') ? 'text-cyan-400 font-bold mt-3' : 'text-gray-400 ml-4 leading-relaxed'} break-words whitespace-pre-wrap`}>
+          <div key={i} className={`${bodyLineClasses(line)} break-words whitespace-pre-wrap`}>
             {line}
           </div>
         ))}
-        <div className="flex items-center text-cyan-400 mt-2 font-bold group">
+        <div className={`flex items-center mt-2 font-bold group ${promptClasses}`}>
           <span className="mr-2">➜</span>
-          <span className="mr-2 text-purple-400">{getPath(currentDirId)}</span>
+          <span className={`mr-2 ${pathClasses}`}>{getPath(currentDirId)}</span>
           <input 
             ref={inputRef}
-            className="flex-1 bg-transparent border-none outline-none text-gray-100 font-normal caret-cyan-400"
+            className={`flex-1 transition-colors duration-200 ${inputClasses}`}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}

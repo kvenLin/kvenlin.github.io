@@ -3,51 +3,75 @@ import { motion } from 'framer-motion';
 import { Clock, ExternalLink, GitCommit, UserRound } from 'lucide-react';
 import { siteConfig } from '../../../src/config/site';
 import { translations, Language } from '../../../translations';
+import { Theme } from '../../../types';
 
 interface DashboardHeroProps {
   language: Language;
   isBooting?: boolean;
   onOpenFile: (id: string) => void;
+  theme?: Theme;
 }
 
-export const DashboardHero: React.FC<DashboardHeroProps> = ({ language, isBooting, onOpenFile }) => {
+export const DashboardHero: React.FC<DashboardHeroProps> = ({ language, isBooting, onOpenFile, theme = 'dark' }) => {
   const t = translations[language];
+  const isDark = theme === 'dark';
+  const containerClasses = isDark
+    ? 'bg-gradient-to-br from-[#0b1120]/90 via-[#090f1d]/95 to-[#050912]/95 border border-white/5 text-white shadow-2xl'
+    : 'bg-gradient-to-br from-white via-slate-50 to-[#f2f5fb] border border-slate-200 text-slate-900 shadow-[0_25px_70px_rgba(15,23,42,0.12)]';
+  const badgePrimary = isDark
+    ? 'bg-cyan-950/30 border border-cyan-500/20 text-cyan-400'
+    : 'bg-cyan-100 text-cyan-700 border border-cyan-200';
+  const badgeSecondary = isDark
+    ? 'bg-blue-950/30 border border-blue-500/20 text-blue-400'
+    : 'bg-blue-100 text-blue-700 border border-blue-200';
+  const chipClasses = isDark
+    ? 'border border-white/10 bg-white/5 text-gray-300'
+    : 'border border-slate-200 bg-white text-slate-600';
+  const descriptionClasses = isDark
+    ? 'text-gray-400 border-white/10'
+    : 'text-slate-600 border-slate-200';
+  const userCardClasses = isDark
+    ? 'border border-white/10 bg-[#050d1a]/80 shadow-[0_15px_45px_rgba(15,23,42,0.45)]'
+    : 'border border-slate-200 bg-white/95 shadow-[0_25px_50px_rgba(15,23,42,0.08)]';
+  const ctaClasses = isDark
+    ? 'bg-gradient-to-r from-cyan-500/30 to-blue-500/30 text-cyan-50 border border-cyan-400/40'
+    : 'bg-gradient-to-r from-cyan-100 to-blue-100 text-cyan-700 border border-cyan-200 shadow-[0_12px_24px_rgba(15,23,42,0.1)]';
 
   return (
     <motion.div
       initial={{ y: 12, opacity: 0 }}
       animate={isBooting ? {} : { y: 0, opacity: 1 }}
       transition={{ duration: 0.28, delay: 0.12, ease: [0.4, 0, 0.2, 1] }}
-      className="flex flex-col lg:flex-row items-stretch justify-between gap-8 p-8 rounded-3xl bg-gradient-to-br from-[#0b1120]/90 via-[#090f1d]/95 to-[#050912]/95 border border-white/5 relative overflow-hidden group shadow-2xl backdrop-blur-xl"
+      className={`flex flex-col lg:flex-row items-stretch justify-between gap-8 p-8 rounded-3xl relative overflow-hidden group backdrop-blur-xl ${containerClasses}`}
     >
       <div className="space-y-6 text-center lg:text-left z-10 flex-1">
         <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-2">
-          <span className="px-3 py-1 rounded-full bg-cyan-950/30 border border-cyan-500/20 text-cyan-400 text-xs font-mono flex items-center gap-2">
+          <span className={`px-3 py-1 rounded-full text-xs font-mono flex items-center gap-2 ${badgePrimary}`}>
             <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
             v{siteConfig.build.version}
           </span>
-          <span className="px-3 py-1 rounded-full bg-blue-950/30 border border-blue-500/20 text-blue-400 text-xs font-mono flex items-center gap-2">
+          <span className={`px-3 py-1 rounded-full text-xs font-mono flex items-center gap-2 ${badgeSecondary}`}>
             <GitCommit size={12} />
             {siteConfig.github.repository_name}
           </span>
         </div>
 
-        <h1 className="text-4xl md:text-6xl font-bold text-white tracking-tight pb-2">{siteConfig.title}</h1>
-        <p className="text-gray-400 text-lg max-w-xl leading-relaxed border-l-2 border-white/10 pl-4">{siteConfig.description}</p>
+        <h1 className={`text-4xl md:text-6xl font-bold tracking-tight pb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{siteConfig.title}</h1>
+        <p className={`text-lg max-w-xl leading-relaxed border-l-2 pl-4 ${descriptionClasses}`}>{siteConfig.description}</p>
 
         <div className="flex flex-col gap-4 pt-4">
-          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 text-sm text-gray-300">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5">
-              <Clock size={14} className="text-blue-300" />
+          <div className={`flex flex-wrap items-center justify-center lg:justify-start gap-3 text-sm ${isDark ? 'text-gray-300' : 'text-slate-600'}`}>
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${chipClasses}`}>
+              <Clock size={14} className={isDark ? 'text-blue-300' : 'text-blue-500'} />
               <span>{new Date(siteConfig.build.timestamp).toLocaleDateString()}</span>
             </div>
             <a
               href={siteConfig.github.repository_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-gray-300 hover:text-white hover:border-cyan-400/60 transition-colors"
+              className={`inline-flex items-center gap-2 px-3 py-1 rounded-full transition-colors ${chipClasses} ${isDark ? 'hover:text-white hover:border-cyan-400/60' : 'hover:text-cyan-600 hover:border-cyan-400/60'}`}
             >
-              <ExternalLink size={14} className="text-cyan-300" />
+              <ExternalLink size={14} className={isDark ? 'text-cyan-300' : 'text-cyan-500'} />
               View Source
             </a>
           </div>
@@ -60,10 +84,10 @@ export const DashboardHero: React.FC<DashboardHeroProps> = ({ language, isBootin
         animate={isBooting ? {} : { opacity: 1, x: 0 }}
         transition={{ delay: 0.16, duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-blue-600/10 to-transparent blur-3xl opacity-40" />
+        <div className={`absolute inset-0 blur-3xl opacity-40 ${isDark ? 'bg-gradient-to-br from-cyan-500/20 via-blue-600/10 to-transparent' : 'bg-gradient-to-br from-cyan-400/15 via-sky-200/40 to-transparent'}`} />
         <motion.div
           whileHover={{ y: -4 }}
-          className="relative border border-white/10 rounded-2xl bg-[#050d1a]/80 backdrop-blur-xl shadow-[0_15px_45px_rgba(15,23,42,0.45)] overflow-hidden"
+          className={`relative rounded-2xl backdrop-blur-xl overflow-hidden ${userCardClasses}`}
         >
           <div className="p-6 space-y-4">
             <div className="flex flex-col items-center text-center gap-3">
@@ -71,7 +95,7 @@ export const DashboardHero: React.FC<DashboardHeroProps> = ({ language, isBootin
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => onOpenFile('file-resume')}
-                className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-cyan-400/50 shadow-lg"
+                className={`relative w-24 h-24 rounded-full overflow-hidden border-2 shadow-lg ${isDark ? 'border-cyan-400/50' : 'border-cyan-200/70'}`}
                 title={t.resumeCta}
               >
                 <img
@@ -79,16 +103,16 @@ export const DashboardHero: React.FC<DashboardHeroProps> = ({ language, isBootin
                   alt={siteConfig.author.name}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className={`absolute inset-0 bg-gradient-to-tr ${isDark ? 'from-cyan-500/40' : 'from-cyan-200/50'} to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
               </motion.button>
               <div>
-                <p className="text-xs font-mono text-cyan-400 uppercase tracking-[0.4em]">{siteConfig.author.name}</p>
-                <p className="text-base text-gray-100 mt-1 font-semibold">{siteConfig.author.bio}</p>
-                <p className="text-xs text-gray-500 mt-1">{siteConfig.author.email}</p>
+                <p className={`text-xs font-mono uppercase tracking-[0.4em] ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>{siteConfig.author.name}</p>
+                <p className={`text-base mt-1 font-semibold ${isDark ? 'text-gray-100' : 'text-slate-800'}`}>{siteConfig.author.bio}</p>
+                <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-slate-500'}`}>{siteConfig.author.email}</p>
               </div>
               <button
                 onClick={() => onOpenFile('file-resume')}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500/30 to-blue-500/30 text-cyan-50 border border-cyan-400/40 font-semibold text-xs shadow-[0_8px_18px_rgba(14,165,233,0.35)] hover:translate-y-0.5 transition-transform"
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold text-xs hover:translate-y-0.5 transition-transform ${ctaClasses}`}
               >
                 <UserRound size={14} />
                 {t.resumeCta}

@@ -47,9 +47,10 @@ function App() {
     return Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, value));
   }, []);
 
-  // Persist theme
+  // Persist theme + sync DOM attributes for CSS hooks
   useEffect(() => {
       localStorage.setItem('theme', theme);
+      document.documentElement.dataset.theme = theme;
       if (theme === 'dark') {
           document.documentElement.classList.add('dark');
       } else {
@@ -346,17 +347,13 @@ function App() {
         className={`flex h-screen w-screen overflow-hidden relative font-sans spotlight-group transition-colors duration-300
             ${theme === 'dark' 
                 ? 'bg-[#020617] text-gray-300 selection:bg-cyan-500/30' 
-                : 'bg-gray-100 text-gray-900 selection:bg-cyan-500/20'}
+                : 'bg-gradient-to-br from-[#d6dcea] via-[#c2cce1] to-[#aab7d0] text-[#1d2742] selection:bg-cyan-500/25'}
         `}
     >
       <AnimatePresence>
         {isBooting && <BootSequence onComplete={() => setIsBooting(false)} />}
       </AnimatePresence>
 
-      {/* Global Overlays */}
-      <div className="absolute inset-0 pointer-events-none z-[100] scanlines opacity-30 mix-blend-overlay" />
-      <div className="bg-noise" />
-      
       {/* Background Ambience */}
       <Background theme={theme} />
 
@@ -367,6 +364,7 @@ function App() {
                 files={fileSystem}
                 onFileSelect={handleFileClick}
                 language={language}
+                theme={theme}
             />
         )}
       </AnimatePresence>
@@ -432,7 +430,11 @@ function App() {
         <motion.button
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="absolute top-6 left-6 z-50 p-2 bg-black/40 border border-white/10 rounded-lg text-gray-400 hover:text-white hover:border-cyan-500/50 backdrop-blur-md transition-all"
+            className={`absolute top-6 left-6 z-50 p-2 rounded-lg backdrop-blur-md transition-all border
+                ${theme === 'dark' 
+                    ? 'bg-black/40 border-white/10 text-gray-400 hover:text-white hover:border-cyan-500/50' 
+                    : 'bg-white/80 border-slate-200 text-slate-500 hover:text-cyan-600 hover:border-cyan-200 shadow-lg'}`
+            }
             onClick={() => setIsSidebarOpen(true)}
         >
             <Menu size={20} />
@@ -450,7 +452,11 @@ function App() {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsSidebarOpen(true)}
-            className="fixed z-50 p-2 bg-black/60 border border-cyan-500/50 rounded-full text-cyan-400 hover:text-white hover:bg-cyan-500/20 hover:border-cyan-400 backdrop-blur-md transition-colors shadow-lg shadow-cyan-500/20"
+            className={`fixed z-50 p-2 rounded-full backdrop-blur-md transition-colors shadow-lg
+                ${theme === 'dark'
+                    ? 'bg-black/60 border border-cyan-500/50 text-cyan-400 hover:text-white hover:bg-cyan-500/20 hover:border-cyan-400 shadow-cyan-500/20'
+                    : 'bg-white/90 border border-slate-200 text-cyan-500 hover:bg-cyan-50 hover:border-cyan-200 shadow-cyan-500/10'}`
+            }
             style={{
               left: 8,
               top: '50%',
@@ -474,7 +480,11 @@ function App() {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsSidebarOpen(false)}
-            className="fixed z-50 p-2 bg-black/60 border border-cyan-500/50 rounded-full text-cyan-400 hover:text-white hover:bg-cyan-500/20 hover:border-cyan-400 backdrop-blur-md transition-colors shadow-lg shadow-cyan-500/20"
+            className={`fixed z-50 p-2 rounded-full backdrop-blur-md transition-colors shadow-lg
+                ${theme === 'dark'
+                    ? 'bg-black/60 border border-cyan-500/50 text-cyan-400 hover:text-white hover:bg-cyan-500/20 hover:border-cyan-400 shadow-cyan-500/20'
+                    : 'bg-white/90 border border-slate-200 text-cyan-500 hover:bg-cyan-50 hover:border-cyan-200 shadow-cyan-500/10'}`
+            }
             style={{
               left: sidebarWidth + 8,
               top: '50%',
@@ -675,7 +685,7 @@ function App() {
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
                 className="fixed bottom-0 left-0 right-0 z-40 h-[40vh] md:h-[350px] p-4 md:px-72" 
             >
-                <div className="h-full w-full glass-panel rounded-t-2xl shadow-2xl overflow-hidden border-t border-x border-white/10">
+                <div className={`h-full w-full glass-panel rounded-t-2xl shadow-2xl overflow-hidden border-t border-x ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/80'}`}>
                      <Terminal 
                         onClose={() => setIsTerminalOpen(false)} 
                         files={fileSystem}

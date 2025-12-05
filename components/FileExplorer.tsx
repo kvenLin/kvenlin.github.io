@@ -58,7 +58,22 @@ const FileTreeItem = React.memo<FileTreeItemProps>(({
   const displayName = isFolder ? item.name : getDisplayTitle(item.name);
   const isActive = activeFileId === item.id;
   const paddingLeft = `${depth * 16 + 12}px`;
-  
+  const isDark = theme === 'dark';
+  const activeClasses = isDark 
+    ? 'bg-cyan-500/20 text-cyan-50 shadow-[0_5px_15px_rgba(6,182,212,0.18)]' 
+    : 'bg-cyan-500/10 text-cyan-900 shadow-[0_8px_20px_rgba(14,165,233,0.15)]';
+  const inactiveClasses = isDark 
+    ? 'text-gray-400 hover:text-gray-100 hover:bg-white/5' 
+    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80';
+  const indicatorColor = isDark ? 'bg-cyan-400' : 'bg-cyan-500';
+  const chevronColor = isDark ? 'text-white/70' : 'text-slate-500';
+  const iconBase = isActive 
+    ? (isDark 
+        ? 'opacity-100 drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]' 
+        : 'opacity-100 drop-shadow-[0_0_12px_rgba(14,165,233,0.35)] text-cyan-600')
+    : (isDark ? 'opacity-70' : 'opacity-70 text-slate-500');
+  const matchHighlight = isDark ? 'text-cyan-300' : 'text-cyan-700';
+
   const isVisible = hasMatchingChildren(itemId, files, filterTag);
   // Check match in tags OR categories
   const isMatch = !isFolder && filterTag && (item.tags?.includes(filterTag) || item.categories?.includes(filterTag));
@@ -75,7 +90,7 @@ const FileTreeItem = React.memo<FileTreeItemProps>(({
         transition={{ delay: depth * 0.05 }}
         className={`
           relative flex items-center py-1.5 cursor-pointer select-none text-sm transition-colors duration-200 group rounded-md mx-2 mb-0.5
-          ${isActive ? 'bg-cyan-500/20 text-cyan-50' : 'text-gray-400 hover:text-gray-100 hover:bg-white/5'}
+          ${isActive ? activeClasses : inactiveClasses}
           ${filterTag && !isMatch && !isFolder ? 'opacity-30' : 'opacity-100'}
         `}
         style={{ paddingLeft }}
@@ -92,11 +107,11 @@ const FileTreeItem = React.memo<FileTreeItemProps>(({
         {isActive && (
             <motion.div 
                 layoutId="active-indicator"
-                className="absolute left-0 w-1 h-4 bg-cyan-400 rounded-r-full" 
+                className={`absolute left-0 w-1 h-4 rounded-r-full ${indicatorColor}`} 
             />
         )}
 
-        <span className="mr-1.5 flex-shrink-0 opacity-70">
+        <span className={`mr-1.5 flex-shrink-0 ${chevronColor}`}>
           {isFolder && (
             item.isOpen || filterTag ? <ChevronDown size={14} /> : <ChevronRight size={14} />
           )}
@@ -108,11 +123,11 @@ const FileTreeItem = React.memo<FileTreeItemProps>(({
             name={item.name} 
             isFolder={isFolder} 
             isOpen={item.isOpen || !!filterTag} 
-            className={`transition-opacity ${isActive ? 'opacity-100 drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]' : 'opacity-70'}`}
+            className={`transition-opacity ${iconBase}`}
           />
         </div>
         
-        <span className={`truncate font-medium ${isMatch ? 'text-cyan-300' : ''}`}>{displayName}</span>
+        <span className={`truncate font-medium ${isMatch ? matchHighlight : ''}`}>{displayName}</span>
       </motion.div>
 
       <AnimatePresence>
@@ -147,6 +162,16 @@ const FileTreeItem = React.memo<FileTreeItemProps>(({
 export const FileExplorer: React.FC<FileExplorerProps> = (props) => {
   const { files, onNavigateHome, activeFileId, activeTag, onTagClick, onOpenSearch, language, onToggleSidebar, theme } = props;
   const t = translations[language];
+  const isDark = theme === 'dark';
+  const shellClasses = isDark
+    ? 'bg-[#050c1a]/75 border border-white/5 text-gray-200 shadow-[0_25px_45px_rgba(2,6,23,0.6)]'
+    : 'bg-gradient-to-br from-[#eef2fb]/85 via-[#e0e6f5]/90 to-[#cad4e8]/85 border border-slate-200/60 text-[#1f2b46] shadow-[0_35px_70px_rgba(9,16,35,0.18)]';
+  const sectionLabelColor = isDark ? 'text-gray-500' : 'text-[#5c6787]';
+  const mutedText = isDark ? 'text-gray-500' : 'text-[#6a7697]';
+  const dividerGradient = isDark ? 'from-white/10' : 'from-[#c3cee5]';
+  const quickCardClasses = isDark
+    ? 'bg-white/5 border border-white/5 text-gray-500 hover:bg-white/10 hover:border-white/20'
+    : 'bg-gradient-to-r from-[#f8f9ff] via-[#ecf1ff] to-[#dee6f6] text-[#2d3654] border border-[#d3dcf0] shadow-[0_15px_35px_rgba(15,23,42,0.12)] hover:border-cyan-200 hover:text-[#0e3a55]';
 
   // Expand state for Tags
   const [isTagsExpanded, setIsTagsExpanded] = useState(false);
@@ -167,12 +192,16 @@ export const FileExplorer: React.FC<FileExplorerProps> = (props) => {
   const visibleTags = isTagsExpanded ? allTags : allTags.slice(0, INITIAL_VISIBLE_COUNT);
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden gap-2 pt-0">
+    <div className={`flex-1 flex flex-col overflow-hidden gap-2 pt-0 rounded-3xl backdrop-blur-xl transition-colors duration-300 ${shellClasses}`}>
       
       {/* Header / Toggle */}
-      <div className="flex justify-between items-center p-3 px-4 border-b border-white/5 bg-black/20 shrink-0">
-         <span className="text-[10px] font-mono text-cyan-500/70 border border-cyan-900/30 px-2 py-0.5 rounded bg-cyan-950/20">DEV.OS</span>
-         <button onClick={onToggleSidebar} className="text-gray-500 hover:text-white transition-colors" title="Collapse Sidebar (Zen Mode)">
+      <div className={`flex justify-between items-center p-4 px-5 border-b shrink-0 backdrop-blur-md ${isDark ? 'border-white/5 bg-black/5' : 'border-slate-200/60 bg-gradient-to-r from-[#f1f4fc]/85 to-[#e1e7f6]/80 text-[#1f2d4f]'}`}>
+         <span className={`text-[10px] font-mono border px-2 py-0.5 rounded tracking-[0.3em] ${isDark ? 'text-cyan-300/80 border-cyan-900/40 bg-cyan-900/10' : 'text-cyan-600 border-cyan-200 bg-cyan-50/70'}`}>DEV.OS</span>
+         <button 
+            onClick={onToggleSidebar} 
+            className={`transition-colors ${isDark ? 'text-gray-500 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`} 
+            title="Collapse Sidebar (Zen Mode)"
+        >
             <ChevronLeft size={16} />
          </button>
       </div>
@@ -182,23 +211,27 @@ export const FileExplorer: React.FC<FileExplorerProps> = (props) => {
           <div className="flex flex-col gap-1 px-2 mt-4 shrink-0">
              <div 
                 onClick={onOpenSearch}
-                className="mx-2 mb-2 px-3 py-2 bg-white/5 border border-white/5 rounded-lg flex items-center justify-between text-xs text-gray-500 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer group"
+                className={`mx-2 mb-3 px-4 py-2 rounded-xl flex items-center justify-between text-xs transition-all cursor-pointer group ${quickCardClasses}`}
              >
-                <div className="flex items-center gap-2 group-hover:text-gray-300">
+                <div className={`flex items-center gap-2 ${isDark ? 'group-hover:text-gray-300' : 'group-hover:text-[#122742]'}`}>
                     <Search size={12} />
                     <span>{t.searchPlaceholder}</span>
                 </div>
-                <kbd className="hidden md:block bg-black/30 px-1.5 rounded text-[10px] font-mono">⌘K</kbd>
+                <kbd className={`hidden md:block px-1.5 rounded text-[10px] font-mono ${isDark ? 'bg-black/30 text-gray-300' : 'bg-[#ced4e7] text-[#1f2c46]'}`}>⌘K</kbd>
              </div>
 
-             <div className="px-3 py-1 text-[10px] font-bold text-gray-500 tracking-widest uppercase">{t.quickAccess}</div>
+                <div className={`px-3 py-1 text-[10px] font-bold tracking-widest uppercase ${isDark ? 'text-gray-500' : 'text-[#5c6787]'}`}>{t.quickAccess}</div>
              <motion.button 
                whileHover={{ scale: 1.02, x: 5 }}
                whileTap={{ scale: 0.98 }}
                onClick={onNavigateHome}
                className={`
                    flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 mx-2 text-left relative overflow-hidden
-                   ${activeFileId === null && !activeTag ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg' : 'text-gray-400 hover:bg-white/5 hover:text-white'}
+                   ${activeFileId === null && !activeTag 
+                        ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg' 
+                        : isDark 
+                            ? 'text-gray-400 hover:bg-white/5 hover:text-white' 
+                            : 'text-[#2c3551] hover:bg-[#e6ecf8]/80 hover:text-[#0f1f3a]'}
                `}
             >
                <div className="relative z-10 flex items-center gap-3">
@@ -214,11 +247,14 @@ export const FileExplorer: React.FC<FileExplorerProps> = (props) => {
           {/* Tags Section */}
           {allTags.length > 0 && (
               <div className="flex flex-col gap-1 px-2 mt-4 shrink-0">
-                <div className="px-3 py-1 text-[10px] font-bold text-gray-500 tracking-widest uppercase flex justify-between items-center">
+                <div className={`px-3 py-1 text-[10px] font-bold tracking-widest uppercase flex justify-between items-center ${isDark ? 'text-gray-500' : 'text-[#5c6787]'}`}>
                     <span>{t.filterTags}</span>
                     {activeTag && (
-                        <button onClick={() => onTagClick(null)} className="text-gray-500 hover:text-white flex items-center gap-1 transition-colors">
-                            <span className="text-[10px]">{t.clear}</span>
+                        <button 
+                            onClick={() => onTagClick(null)} 
+                            className={`flex items-center gap-1 text-[10px] transition-colors ${isDark ? 'text-gray-500 hover:text-white' : 'text-[#6a7697] hover:text-[#0f1f38]'}`}
+                        >
+                            <span>{t.clear}</span>
                             <X size={10} />
                         </button>
                     )}
@@ -235,8 +271,12 @@ export const FileExplorer: React.FC<FileExplorerProps> = (props) => {
                                 className={`
                                     text-[10px] px-2 py-0.5 rounded-full border transition-all duration-200 flex items-center gap-1
                                     ${isActive 
-                                        ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.3)]' 
-                                        : 'bg-white/5 border-white/5 text-gray-500 hover:border-white/20 hover:text-gray-300 hover:bg-white/10'}
+                                        ? (isDark 
+                                            ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.3)]' 
+                                            : 'bg-cyan-100 border-cyan-400/70 text-cyan-700 shadow-[0_0_12px_rgba(14,165,233,0.25)]')
+                                        : (isDark 
+                                            ? 'bg-white/5 border-white/5 text-gray-500 hover:border-white/20 hover:text-gray-300 hover:bg-white/10'
+                                            : 'bg-[#e8ecf8] border-[#cfd8ee] text-[#3c4b6e] hover:border-cyan-200 hover:text-[#0e3a55] hover:bg-[#d9e5ff]')}
                                 `}
                             >
                                 <span className="opacity-50">#</span>{tag}
@@ -246,7 +286,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = (props) => {
                     {allTags.length > INITIAL_VISIBLE_COUNT && (
                          <button 
                             onClick={() => setIsTagsExpanded(!isTagsExpanded)}
-                            className="text-[10px] text-gray-500 hover:text-cyan-400 transition-colors px-2 py-0.5 flex items-center gap-1"
+                            className={`text-[10px] ${isDark ? 'text-gray-500 hover:text-cyan-400' : 'text-[#6b7695] hover:text-[#0f3a55]' } transition-colors px-2 py-0.5 flex items-center gap-1`}
                         >
                              {isTagsExpanded ? 'Less' : `+${allTags.length - INITIAL_VISIBLE_COUNT}`}
                         </button>
@@ -257,9 +297,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = (props) => {
 
           {/* Explorer Tree */}
           <div className="flex-1 flex flex-col mt-4">
-            <div className="px-5 py-2 text-[10px] font-bold text-gray-500 tracking-widest uppercase flex items-center justify-between">
+            <div className={`px-5 py-2 text-[10px] font-bold tracking-widest uppercase flex items-center justify-between ${isDark ? 'text-gray-500' : 'text-[#5c6787]'}`}>
                 <span>{t.projectSource}</span>
-                {activeTag && <IconHelper name="filter" type="filter" className="animate-pulse text-cyan-400" />}
+                {activeTag && <IconHelper name="filter" type="filter" className={`animate-pulse ${isDark ? 'text-cyan-400' : 'text-cyan-500'}`} />}
             </div>
             <div className="flex-1 pb-4">
               <FileTreeItem 

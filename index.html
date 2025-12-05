@@ -17,6 +17,12 @@
             color: #e2e8f0;
             overflow: hidden; 
         }
+        [data-theme='light'] body {
+            background: radial-gradient(circle at 20% 20%, #e9edf7, transparent 30%),
+                        radial-gradient(circle at 80% 0%, #c9d2ec, transparent 40%),
+                        linear-gradient(135deg, #b2bed8 0%, #8f9cbc 100%);
+            color: #0b1630;
+        }
         .font-mono {
             font-family: 'Fira Code', monospace;
         }
@@ -42,6 +48,11 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
+        [data-theme='light'] .glass-panel {
+            background: rgba(226, 233, 247, 0.85);
+            border: 1px solid rgba(15, 23, 42, 0.18);
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18);
+        }
 
         /* Noise Texture for Analog Feel */
         .bg-noise {
@@ -54,6 +65,11 @@
             z-index: 50;
             opacity: 0.03;
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+        [data-theme='light'] .bg-noise {
+            opacity: 0.18;
+            mix-blend-mode: multiply;
+            filter: saturate(60%);
         }
 
         /* Spotlight Effect Utility */
@@ -96,6 +112,15 @@
             background-size: 100% 4px;
             pointer-events: none;
             z-index: 9999;
+        }
+        [data-theme='light'] .scanlines {
+            background: linear-gradient(
+                to bottom,
+                rgba(0,0,0,0),
+                rgba(0,0,0,0) 50%,
+                rgba(15,23,42,0.04) 50%,
+                rgba(15,23,42,0.04)
+            );
         }
 
         /* Glitch Animation */

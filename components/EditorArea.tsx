@@ -61,6 +61,28 @@ export const EditorArea: React.FC<EditorAreaProps> = React.memo(({
 
   const renderSlugger = useMemo(() => createSlugger(), [activeFile?.content, activeFileId]);
   const tocItems = useMemo(() => buildToc(activeFile?.content), [activeFile?.content]);
+  const isDark = theme !== 'light';
+  const panelClasses = isDark 
+    ? 'border border-white/5 bg-[#0f172a]/40 text-gray-100' 
+    : 'border border-slate-300/70 bg-gradient-to-br from-[#edf1fb]/85 via-[#e4e9f6]/90 to-[#d4dced]/85 text-[#1c2542] shadow-[0_35px_80px_rgba(15,23,42,0.18)]';
+  const tabStripClasses = isDark 
+    ? 'border-white/5 bg-black/20'
+    : 'border-slate-200/70 bg-[#e6ebf5]/70';
+  const activeTabClasses = isDark
+    ? 'bg-[#0f172a]/60 text-cyan-100 border-white/10 shadow-lg mb-[-1px] pb-2.5 z-10'
+    : 'bg-[#f8faff] text-[#23567a] border-slate-200/80 shadow-[0_15px_35px_rgba(15,23,42,0.12)] mb-[-1px] pb-2.5 z-10';
+  const inactiveTabClasses = isDark
+    ? 'bg-transparent text-gray-500 border-transparent hover:bg-white/5 hover:text-gray-300'
+    : 'bg-transparent text-slate-500 border-transparent hover:bg-[#e8eef8]/80 hover:text-[#1f2c4c]';
+  const tocCardClasses = isDark
+    ? 'border-white/5 bg-[#070c16]/80'
+    : 'border-slate-200/80 bg-gradient-to-br from-[#f5f7fe] via-[#ecf1fb] to-[#dfe6f5] text-[#1f2a44]';
+  const tocFixedClasses = isDark
+    ? 'border-white/5 bg-[#070c16]/95'
+    : 'border-slate-200/80 bg-gradient-to-br from-[#f0f4fb] via-[#e6ebf6] to-[#dae2f1] text-[#1f2a44] shadow-[0_20px_45px_rgba(15,23,42,0.18)]';
+  const pathBarClasses = isDark 
+    ? 'text-gray-500 border-white/5'
+    : 'text-[#5e6c8d] border-slate-200/80';
 
   useEffect(() => {
     imageEntriesRef.current = [];
@@ -267,7 +289,7 @@ export const EditorArea: React.FC<EditorAreaProps> = React.memo(({
   const renderMarkdown = Boolean(activeFile?.name.endsWith('.md'));
 
   return (
-    <motion.div className="flex-1 flex flex-col glass-panel rounded-2xl overflow-hidden shadow-2xl h-full border border-white/5 bg-[#0f172a]/40 backdrop-blur-3xl relative">
+    <motion.div className={`flex-1 flex flex-col glass-panel rounded-2xl overflow-hidden shadow-2xl h-full backdrop-blur-3xl relative ${panelClasses}`}>
       {activeFile && (
         <div
           ref={progressBarRef}
@@ -277,7 +299,7 @@ export const EditorArea: React.FC<EditorAreaProps> = React.memo(({
       )}
 
       {openFiles.length > 0 && (
-        <div className="h-10 flex items-end px-4 gap-2 overflow-x-auto scrollbar-hide border-b border-white/5 bg-black/20 pt-2 shrink-0">
+        <div className={`h-10 flex items-end px-4 gap-2 overflow-x-auto scrollbar-hide border-b pt-2 shrink-0 ${tabStripClasses}`}>
           <AnimatePresence mode="popLayout">
             {openFiles.map(fileId => {
               const file = files[fileId];
@@ -291,18 +313,22 @@ export const EditorArea: React.FC<EditorAreaProps> = React.memo(({
                   exit={{ opacity: 0, scale: 0.9 }}
                   onClick={() => onTabClick(fileId)}
                   className={`group relative flex items-center px-4 py-2 rounded-t-lg cursor-pointer text-xs select-none transition-all duration-200 border-t border-x min-w-[120px] max-w-[200px] ${
-                    isActive
-                      ? 'bg-[#0f172a]/60 text-cyan-100 border-white/10 shadow-lg mb-[-1px] pb-2.5 z-10'
-                      : 'bg-transparent text-gray-500 border-transparent hover:bg-white/5 hover:text-gray-300'
+                    isActive ? activeTabClasses : inactiveTabClasses
                   }`}
                 >
                   <div className={`absolute top-0 left-0 right-0 h-[2px] bg-cyan-500 ${isActive ? 'opacity-100' : 'opacity-0'}`} />
-                  <IconHelper name={file.name} className={`mr-2 ${isActive ? 'opacity-100' : 'opacity-50'}`} />
+                  <IconHelper name={file.name} className={`mr-2 ${isActive ? (isDark ? 'opacity-100' : 'opacity-100 text-cyan-600') : (isDark ? 'opacity-50' : 'opacity-60 text-slate-400')}`} />
                   <span className="truncate flex-1">{file.name}</span>
                   <button
                     onClick={e => onCloseTab(fileId, e)}
-                    className={`ml-2 p-0.5 rounded-full hover:bg-white/20 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 ${
-                      isActive ? 'opacity-100' : ''
+                    className={`ml-2 p-0.5 rounded-full transition-colors opacity-0 group-hover:opacity-100 ${
+                      isActive
+                        ? isDark
+                          ? 'hover:bg-white/20 hover:text-red-400 opacity-100'
+                          : 'hover:bg-slate-200 hover:text-red-500 opacity-100'
+                        : isDark
+                          ? 'hover:bg-white/10 hover:text-red-400'
+                          : 'hover:bg-slate-100 hover:text-red-500'
                     }`}
                   >
                     <X size={10} />
@@ -327,23 +353,23 @@ export const EditorArea: React.FC<EditorAreaProps> = React.memo(({
             >
               <div className="scanning-line" />
 
-              <div className="flex items-center gap-2 text-xs font-mono text-gray-500 mb-8 border-b border-white/5 pb-4">
-                <span className="text-cyan-500/50">~/project</span>
-                <span className="text-gray-700">/</span>
+              <div className={`flex items-center gap-2 text-xs font-mono mb-8 border-b pb-4 ${pathBarClasses}`}>
+                <span className={isDark ? 'text-cyan-500/50' : 'text-cyan-600/70'}>~/project</span>
+                <span className={isDark ? 'text-gray-600' : 'text-slate-400'}>/</span>
                 <span>{activeFile.parentId?.replace('folder-', '')}</span>
-                <span className="text-gray-700">/</span>
-                <span className="text-cyan-300">{activeFile.name}</span>
+                <span className={isDark ? 'text-gray-600' : 'text-slate-400'}>/</span>
+                <span className={isDark ? 'text-cyan-300' : 'text-cyan-600 font-semibold'}>{activeFile.name}</span>
               </div>
 
               {renderMarkdown && tocItems.length > 0 && (
-                <div className="mb-12 rounded-2xl border border-white/5 bg-[#070c16]/80 p-6 shadow-2xl backdrop-blur-xl xl:hidden">
+                <div className={`mb-12 rounded-2xl border p-6 shadow-2xl backdrop-blur-xl xl:hidden ${tocCardClasses}`}>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-300">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-300' : 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-600'}`}>
                       <Hash size={18} />
                     </div>
                     <div>
-                      <p className="text-xs tracking-[0.3em] text-cyan-400/70 uppercase">Table of Contents</p>
-                      <h4 className="text-lg font-semibold text-white">当前文章目录</h4>
+                      <p className={`text-xs tracking-[0.3em] uppercase ${isDark ? 'text-cyan-400/70' : 'text-cyan-600/80'}`}>Table of Contents</p>
+                      <h4 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>当前文章目录</h4>
                     </div>
                   </div>
                   <nav className="space-y-1">
@@ -351,10 +377,10 @@ export const EditorArea: React.FC<EditorAreaProps> = React.memo(({
                       <button
                         key={item.id}
                         onClick={e => handleAnchorNavigation(e, item.id)}
-                        className="w-full flex items-center gap-3 rounded-xl py-2 px-3 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+                        className={`w-full flex items-center gap-3 rounded-xl py-2 px-3 text-sm transition-all ${isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
                         style={{ paddingLeft: `${(item.level - 1) * 12}px` }}
                       >
-                        <span className="text-cyan-500/70 text-xs font-mono">
+                        <span className={`text-xs font-mono ${isDark ? 'text-cyan-500/70' : 'text-cyan-600/80'}`}>
                           {item.level === 1 ? 'H1' : item.level === 2 ? 'H2' : 'H3'}
                         </span>
                         <span className="truncate flex-1">{item.text}</span>
@@ -375,32 +401,32 @@ export const EditorArea: React.FC<EditorAreaProps> = React.memo(({
                           animate={{ opacity: 1, x: 0, scale: 1 }}
                           exit={{ opacity: 0, x: 20, scale: 0.95 }}
                           transition={{ duration: 0.2, ease: 'easeOut' }}
-                          className="w-72 rounded-2xl border border-white/5 bg-[#070c16]/95 shadow-2xl backdrop-blur-2xl"
+                          className={`w-72 rounded-2xl border shadow-2xl backdrop-blur-2xl ${tocFixedClasses}`}
                         >
                           <div
-                            className="flex items-center justify-between px-5 py-4 border-b border-white/5 cursor-pointer hover:bg-white/5 transition-colors"
+                            className={`flex items-center justify-between px-5 py-4 border-b cursor-pointer transition-colors ${isDark ? 'border-white/5 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-100'}`}
                             onClick={() => setIsTocOpen(false)}
                           >
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-300">
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-300' : 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-600'}`}>
                                 <List size={18} />
                               </div>
                               <div>
-                                <p className="text-[11px] tracking-[0.4em] text-cyan-400/70 uppercase">TOC</p>
-                                <h4 className="text-base font-semibold text-white">文章导航</h4>
+                                <p className={`text-[11px] tracking-[0.4em] uppercase ${isDark ? 'text-cyan-400/70' : 'text-cyan-600/80'}`}>TOC</p>
+                                <h4 className={`text-base font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>文章导航</h4>
                               </div>
                             </div>
-                            <PanelRightClose size={16} className="text-gray-500 hover:text-white transition-colors" />
+                            <PanelRightClose size={16} className={`transition-colors ${isDark ? 'text-gray-500 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`} />
                           </div>
                           <nav className="max-h-[60vh] overflow-y-auto px-3 py-2 space-y-1 custom-scrollbar">
                             {tocItems.map(item => (
                               <button
                                 key={item.id}
                                 onClick={e => handleAnchorNavigation(e, item.id)}
-                                className="w-full flex items-center gap-3 rounded-xl py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-all text-left"
+                                className={`w-full flex items-center gap-3 rounded-xl py-2 px-2 text-sm transition-all text-left ${isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
                                 style={{ paddingLeft: `${(item.level - 1) * 14}px` }}
                               >
-                                <span className="text-cyan-500/70 text-[11px] font-mono uppercase tracking-widest w-8 shrink-0">
+                                <span className={`text-[11px] font-mono uppercase tracking-widest w-8 shrink-0 ${isDark ? 'text-cyan-500/70' : 'text-cyan-600/80'}`}>
                                   {item.level === 1 ? 'H1' : item.level === 2 ? 'H2' : 'H3'}
                                 </span>
                                 <span className="truncate flex-1">{item.text}</span>
@@ -429,20 +455,27 @@ export const EditorArea: React.FC<EditorAreaProps> = React.memo(({
               )}
 
               {renderMarkdown ? (
-                <div className="prose prose-invert prose-lg max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-gray-100 prose-h2:text-2xl prose-h2:text-cyan-100 prose-h2:border-b prose-h2:border-white/10 prose-h2:pb-2 prose-h2:mt-12 prose-h3:text-xl prose-h3:text-cyan-50 prose-h3:mt-8 prose-p:text-slate-400 prose-p:leading-relaxed prose-strong:text-white prose-code:text-cyan-300 prose-code:bg-cyan-950/30 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-[#0b1120] prose-pre:border prose-pre:border-white/10 prose-pre:shadow-2xl prose-pre:rounded-xl prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:underline hover:prose-a:text-cyan-300 prose-ul:list-disc prose-ul:pl-6 prose-li:marker:text-cyan-500 prose-li:text-slate-300 prose-ol:list-decimal prose-ol:pl-6 prose-li:marker:text-cyan-500">
-                  <MarkdownRenderer
-                    content={activeFile.content}
-                    activeFile={activeFile}
-                    renderSlugger={renderSlugger}
-                    handleAnchorNavigation={handleAnchorNavigation}
-                    resolveImageSrc={resolveImageSrc}
-                    registerImage={registerImage}
-                    openImagePreview={openImagePreview}
-                    imageEntriesRef={imageEntriesRef}
-                  />
+                <div className="space-y-8">
+                  <div className={
+                    isDark 
+                      ? 'prose prose-invert prose-lg max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-gray-100 prose-h2:text-2xl prose-h2:text-cyan-100 prose-h2:border-b prose-h2:border-white/10 prose-h2:pb-2 prose-h2:mt-12 prose-h3:text-xl prose-h3:text-cyan-50 prose-h3:mt-8 prose-p:text-slate-400 prose-p:leading-relaxed prose-strong:text-white prose-code:text-cyan-300 prose-code:bg-cyan-950/30 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-[#0b1120] prose-pre:border prose-pre:border-white/10 prose-pre:shadow-2xl prose-pre:rounded-xl prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:underline hover:prose-a:text-cyan-300 prose-ul:list-disc prose-ul:pl-6 prose-li:marker:text-cyan-500 prose-li:text-slate-300 prose-ol:list-decimal prose-ol:pl-6 prose-li:marker:text-cyan-500'
+                      : 'prose prose-lg max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-[#1f2e4c] prose-h2:text-2xl prose-h2:text-[#223255] prose-h2:border-b prose-h2:border-slate-200/80 prose-h2:pb-2 prose-h2:mt-12 prose-h3:text-xl prose-h3:text-[#2b3e63] prose-h3:mt-8 prose-p:text-[#3a4a64] prose-p:leading-relaxed prose-strong:text-[#1f2e4c] prose-code:text-rose-600 prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-[#ecf0f8] prose-pre:border prose-pre:border-slate-200 prose-pre:shadow-lg prose-pre:rounded-xl prose-a:text-cyan-600 prose-a:no-underline hover:prose-a:underline hover:prose-a:text-cyan-500 prose-ul:list-disc prose-ul:pl-6 prose-li:marker:text-cyan-500 prose-li:text-[#3a4a64] prose-ol:list-decimal prose-ol:pl-6 prose-li:marker:text-cyan-500'
+                  }>
+                    <MarkdownRenderer
+                      content={activeFile.content}
+                      activeFile={activeFile}
+                      renderSlugger={renderSlugger}
+                      handleAnchorNavigation={handleAnchorNavigation}
+                      resolveImageSrc={resolveImageSrc}
+                      registerImage={registerImage}
+                      openImagePreview={openImagePreview}
+                      imageEntriesRef={imageEntriesRef}
+                      theme={theme}
+                    />
+                  </div>
 
                   {activeFile.tags && (
-                    <div className="mt-16 pt-6 border-t border-white/10 flex gap-2 flex-wrap">
+                    <div className={`pt-6 border-t flex gap-2 flex-wrap ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
                       {activeFile.tags.map((tag, index) => (
                         <span
                           key={`${tag}-${index}`}
@@ -450,7 +483,7 @@ export const EditorArea: React.FC<EditorAreaProps> = React.memo(({
                             onTagClick(tag);
                             onCloseFile?.();
                           }}
-                          className="text-xs bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 px-3 py-1 rounded-full font-mono cursor-pointer hover:bg-cyan-500/20 hover:shadow-[0_0_10px_rgba(6,182,212,0.2)] transition-colors"
+                          className={`text-xs px-3 py-1 rounded-full font-mono cursor-pointer transition-colors ${isDark ? 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 hover:bg-cyan-500/20 hover:shadow-[0_0_10px_rgba(6,182,212,0.2)]' : 'bg-cyan-50 border border-cyan-200 text-cyan-700 hover:bg-cyan-100 hover:border-cyan-300'}`}
                         >
                           #{tag}
                         </span>
@@ -467,7 +500,15 @@ export const EditorArea: React.FC<EditorAreaProps> = React.memo(({
               )}
             </motion.div>
           ) : (
-            <Dashboard files={files} language={language} onOpenFile={onOpenFile} isBooting={isBooting} onTagClick={onTagClick} activeTag={activeTag} />
+            <Dashboard
+              files={files}
+              language={language}
+              onOpenFile={onOpenFile}
+              isBooting={isBooting}
+              onTagClick={onTagClick}
+              activeTag={activeTag}
+              theme={theme}
+            />
           )}
         </AnimatePresence>
       </div>

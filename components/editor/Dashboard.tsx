@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { FileSystemItem } from '../../types';
+import { FileSystemItem, Theme } from '../../types';
 import { Language } from '../../translations';
 import { DashboardHero } from './sections/DashboardHero';
 import { DashboardStats } from './sections/DashboardStats';
@@ -17,9 +17,18 @@ interface DashboardProps {
   isBooting?: boolean;
   onTagClick: (tag: string | null) => void;
   activeTag?: string | null;
+  theme?: Theme;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFile, isBooting, onTagClick, activeTag }) => {
+export const Dashboard: React.FC<DashboardProps> = ({
+  files,
+  language,
+  onOpenFile,
+  isBooting,
+  onTagClick,
+  activeTag,
+  theme = 'dark',
+}) => {
   // Current category path for drill-down navigation
   const [categoryPath, setCategoryPath] = useState<string[]>([]);
   // Track which category was clicked for expand animation
@@ -197,12 +206,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFil
       className="h-full flex flex-col items-center p-4 md:p-8 overflow-y-auto w-full custom-scrollbar"
     >
       <div className="max-w-6xl w-full space-y-12 mt-4 md:mt-10 pb-20">
-        <DashboardHero language={language} isBooting={isBooting} onOpenFile={onOpenFile} />
+        <DashboardHero language={language} isBooting={isBooting} onOpenFile={onOpenFile} theme={theme} />
 
-        <DashboardStats files={files} language={language} isBooting={isBooting} />
+        <DashboardStats files={files} language={language} isBooting={isBooting} theme={theme} />
 
         {siteConfig.projects.length > 0 && (
-          <DashboardProjects language={language} projects={siteConfig.projects} />
+          <DashboardProjects language={language} projects={siteConfig.projects} theme={theme} />
         )}
 
         {currentCategories.length > 0 && (
@@ -215,6 +224,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFil
             expandingFromIndex={expandingFromIndex}
             isCategoriesExpanded={isCategoriesExpanded}
             totalCategories={currentCategories.length}
+            theme={theme}
             onBreadcrumbClick={handleBreadcrumbClick}
             onCategoryClick={handleCategoryClick}
             onToggleExpand={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
@@ -225,6 +235,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ files, language, onOpenFil
           language={language}
           recentPosts={recentPosts}
           activeTag={activeTag}
+          theme={theme}
           onOpenFile={onOpenFile}
         />
       </div>
