@@ -17,7 +17,7 @@ export const DashboardProjects: React.FC<DashboardProjectsProps> = ({ language, 
   const headerAccent = isDark ? 'from-cyan-900/50' : 'from-cyan-200/60';
   const cardBase = isDark
     ? 'border border-white/5 bg-[#0f172a]/40 hover:border-cyan-500/40 hover:shadow-2xl hover:shadow-cyan-900/20'
-    : 'border border-slate-200 bg-white/95 hover:border-cyan-200 hover:shadow-[0_20px_45px_rgba(15,23,42,0.08)]';
+    : 'border border-slate-300/70 bg-gradient-to-br from-[#e6ecf5] to-[#dde6f3] hover:border-cyan-300 hover:shadow-[0_20px_45px_rgba(15,23,42,0.12)]';
   const overlayGradient = isDark
     ? 'from-cyan-500/10 via-blue-500/5'
     : 'from-cyan-200/40 via-blue-200/30';

@@ -26,7 +26,7 @@ export const DashboardRecentPosts: React.FC<DashboardRecentPostsProps> = ({
   const headerAccent = isDark ? 'from-cyan-900/50' : 'from-cyan-100/70';
   const cardBase = isDark
     ? 'bg-[#0f172a]/30 border border-white/5 hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-900/10 hover:border-cyan-500/30'
-    : 'bg-white border border-slate-200 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(15,23,42,0.12)] hover:border-cyan-200';
+    : 'bg-gradient-to-br from-[#e6ecf5] to-[#dde6f3] border border-slate-300/70 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(15,23,42,0.15)] hover:border-cyan-300';
   const titleColor = isDark ? 'text-gray-200 group-hover:text-cyan-300' : 'text-slate-800 group-hover:text-cyan-600';
   const metaPill = isDark
     ? 'text-gray-500 bg-black/20 border border-white/5'
@@ -61,7 +61,8 @@ export const DashboardRecentPosts: React.FC<DashboardRecentPostsProps> = ({
               <div className="flex items-center gap-3">
                 <IconHelper
                   name={post.name}
-                  className={`transition-colors ${isDark ? 'group-hover:text-cyan-300 text-gray-400' : 'text-slate-400 group-hover:text-cyan-600'}`}
+                  className={`transition-colors ${isDark ? 'group-hover:text-cyan-300' : 'group-hover:text-cyan-600'}`}
+                  theme={theme}
                 />
                 <span className={`${titleColor} font-bold transition-colors text-lg tracking-tight truncate max-w-[200px]`}>
                   {getDisplayTitle(post.name)}

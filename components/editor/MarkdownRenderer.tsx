@@ -132,7 +132,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           className={`border-l-4 pl-6 italic py-4 pr-4 my-8 rounded-r-2xl transition-colors ${
             isDark
               ? 'border-cyan-500 text-gray-300 bg-cyan-900/10'
-              : 'border-[#7aa3b7] text-[#2e405a] bg-white/85 shadow-[0_20px_55px_rgba(15,23,42,0.12)]'
+              : 'border-[#6a93a7] text-[#2e405a] bg-[#e6ecf5]/95 shadow-[0_20px_55px_rgba(15,23,42,0.15)]'
           }`}
           {...props}
         />
@@ -140,12 +140,12 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       ul: ({ node, ...props }) => <ul className="list-disc list-outside ml-4 space-y-2 mb-6" {...props} />,
       li: ({ node, ...props }) => <li className={`pl-2 marker:text-cyan-500 ${isDark ? 'text-slate-300' : 'text-[#3a4a64]'}`} {...props} />,
       table: ({ node, ...props }) => (
-        <div className={`my-10 overflow-x-auto rounded-2xl border shadow-xl ${isDark ? 'border-white/10 bg-[#050b16]' : 'border-slate-200 bg-white/85'}`}>
+        <div className={`my-10 overflow-x-auto rounded-2xl border shadow-xl ${isDark ? 'border-white/10 bg-[#050b16]' : 'border-slate-300/70 bg-[#e6ecf5]/95'}`}>
           <table className="min-w-full text-left text-sm" {...props} />
         </div>
       ),
       thead: ({ node, ...props }) => (
-        <thead className={`uppercase tracking-[0.3em] text-xs ${isDark ? 'text-cyan-200 bg-white/5' : 'text-[#5a6d8a] bg-slate-100/80'}`} {...props} />
+        <thead className={`uppercase tracking-[0.3em] text-xs ${isDark ? 'text-cyan-200 bg-white/5' : 'text-[#4a5d7a] bg-[#dde6f3]/90'}`} {...props} />
       ),
       tbody: ({ node, ...props }) => (
         <tbody className={`divide-y ${isDark ? 'divide-white/10' : 'divide-slate-200'}`} {...props} />

@@ -294,10 +294,10 @@ export const Terminal: React.FC<TerminalProps> = ({ onClose, files, onOpenFile, 
   const isDark = theme === 'dark';
   const rootClasses = isDark
     ? 'bg-black/90 text-gray-200'
-    : 'bg-white/90 text-slate-700 border border-slate-200 shadow-2xl';
+    : 'bg-gradient-to-br from-[#e6ecf5] to-[#dde6f3] text-slate-700 border border-slate-300/70 shadow-2xl';
   const headerClasses = isDark
     ? 'bg-white/5 border-white/5 text-gray-500'
-    : 'bg-white border-b border-slate-200 text-slate-500';
+    : 'bg-[#dde6f3]/95 border-b border-slate-300/70 text-slate-600';
   const badgeClasses = isDark
     ? 'bg-blue-900/30 text-blue-400 border border-blue-500/20'
     : 'bg-slate-100 text-slate-500 border border-slate-200';

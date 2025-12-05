@@ -19,10 +19,10 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ files, language,
   const gridGap = isDark ? 'gap-6' : 'gap-5';
   const cardBase = isDark
     ? 'bg-[#0f172a]/40 border border-white/5 text-gray-100 hover:border-white/10 hover:bg-white/5'
-    : 'bg-white/95 border border-slate-200 text-slate-800 shadow-[0_20px_40px_rgba(15,23,42,0.08)] hover:border-cyan-200 hover:bg-cyan-50/40';
+    : 'bg-gradient-to-br from-[#e6ecf5] to-[#dde6f3] border border-slate-300/70 text-slate-800 shadow-[0_20px_40px_rgba(15,23,42,0.10)] hover:border-cyan-300 hover:from-[#dde6f3] hover:to-[#d4dced]';
   const iconWrapper = isDark
     ? 'bg-black/40'
-    : 'bg-gradient-to-br from-cyan-50 to-blue-50 border border-slate-100';
+    : 'bg-gradient-to-br from-[#d4e4f5] to-[#c8daf0] border border-slate-200';
   const labelColor = isDark ? 'text-gray-500' : 'text-slate-500';
 
   const totalPosts = useMemo(

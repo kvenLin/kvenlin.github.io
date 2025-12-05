@@ -17,7 +17,7 @@ export const DashboardHero: React.FC<DashboardHeroProps> = ({ language, isBootin
   const isDark = theme === 'dark';
   const containerClasses = isDark
     ? 'bg-gradient-to-br from-[#0b1120]/90 via-[#090f1d]/95 to-[#050912]/95 border border-white/5 text-white shadow-2xl'
-    : 'bg-gradient-to-br from-white via-slate-50 to-[#f2f5fb] border border-slate-200 text-slate-900 shadow-[0_25px_70px_rgba(15,23,42,0.12)]';
+    : 'bg-gradient-to-br from-[#e6ecf5] via-[#dde6f3] to-[#d4dced] border border-slate-300/70 text-slate-900 shadow-[0_25px_70px_rgba(15,23,42,0.15)]';
   const badgePrimary = isDark
     ? 'bg-cyan-950/30 border border-cyan-500/20 text-cyan-400'
     : 'bg-cyan-100 text-cyan-700 border border-cyan-200';
@@ -26,13 +26,13 @@ export const DashboardHero: React.FC<DashboardHeroProps> = ({ language, isBootin
     : 'bg-blue-100 text-blue-700 border border-blue-200';
   const chipClasses = isDark
     ? 'border border-white/10 bg-white/5 text-gray-300'
-    : 'border border-slate-200 bg-white text-slate-600';
+    : 'border border-slate-300/70 bg-[#e6ecf5] text-slate-700';
   const descriptionClasses = isDark
     ? 'text-gray-400 border-white/10'
     : 'text-slate-600 border-slate-200';
   const userCardClasses = isDark
     ? 'border border-white/10 bg-[#050d1a]/80 shadow-[0_15px_45px_rgba(15,23,42,0.45)]'
-    : 'border border-slate-200 bg-white/95 shadow-[0_25px_50px_rgba(15,23,42,0.08)]';
+    : 'border border-slate-300/70 bg-gradient-to-br from-[#e8eef8] to-[#dde6f3] shadow-[0_25px_50px_rgba(15,23,42,0.12)]';
   const ctaClasses = isDark
     ? 'bg-gradient-to-r from-cyan-500/30 to-blue-500/30 text-cyan-50 border border-cyan-400/40'
     : 'bg-gradient-to-r from-cyan-100 to-blue-100 text-cyan-700 border border-cyan-200 shadow-[0_12px_24px_rgba(15,23,42,0.1)]';

@@ -124,6 +124,7 @@ const FileTreeItem = React.memo<FileTreeItemProps>(({
             isFolder={isFolder} 
             isOpen={item.isOpen || !!filterTag} 
             className={`transition-opacity ${iconBase}`}
+            theme={theme}
           />
         </div>
         
@@ -165,13 +166,13 @@ export const FileExplorer: React.FC<FileExplorerProps> = (props) => {
   const isDark = theme === 'dark';
   const shellClasses = isDark
     ? 'bg-[#050c1a]/75 border border-white/5 text-gray-200 shadow-[0_25px_45px_rgba(2,6,23,0.6)]'
-    : 'bg-gradient-to-br from-[#eef2fb]/85 via-[#e0e6f5]/90 to-[#cad4e8]/85 border border-slate-200/60 text-[#1f2b46] shadow-[0_35px_70px_rgba(9,16,35,0.18)]';
+    : 'bg-gradient-to-br from-[#e0e8f5] via-[#d4dced] to-[#c8d4e6] border border-slate-300/70 text-[#1f2b46] shadow-[0_35px_70px_rgba(9,16,35,0.20)]';
   const sectionLabelColor = isDark ? 'text-gray-500' : 'text-[#5c6787]';
   const mutedText = isDark ? 'text-gray-500' : 'text-[#6a7697]';
   const dividerGradient = isDark ? 'from-white/10' : 'from-[#c3cee5]';
   const quickCardClasses = isDark
     ? 'bg-white/5 border border-white/5 text-gray-500 hover:bg-white/10 hover:border-white/20'
-    : 'bg-gradient-to-r from-[#f8f9ff] via-[#ecf1ff] to-[#dee6f6] text-[#2d3654] border border-[#d3dcf0] shadow-[0_15px_35px_rgba(15,23,42,0.12)] hover:border-cyan-200 hover:text-[#0e3a55]';
+    : 'bg-gradient-to-r from-[#d4e4f5] via-[#c8daf0] to-[#bcd0eb] text-[#1e293b] border border-blue-200/70 shadow-[0_15px_35px_rgba(15,23,42,0.15)] hover:border-cyan-400 hover:text-[#0a2f48]';
 
   // Expand state for Tags
   const [isTagsExpanded, setIsTagsExpanded] = useState(false);
@@ -235,7 +236,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = (props) => {
                `}
             >
                <div className="relative z-10 flex items-center gap-3">
-                   <IconHelper name="dashboard" type="dashboard" className={activeFileId === null && !activeTag ? 'text-white' : ''} />
+                   <IconHelper name="dashboard" type="dashboard" className={activeFileId === null && !activeTag ? 'text-white' : ''} theme={theme} />
                    <span className="font-medium">{t.dashboard}</span>
                </div>
                {activeFileId === null && !activeTag && (
@@ -299,7 +300,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = (props) => {
           <div className="flex-1 flex flex-col mt-4">
             <div className={`px-5 py-2 text-[10px] font-bold tracking-widest uppercase flex items-center justify-between ${isDark ? 'text-gray-500' : 'text-[#5c6787]'}`}>
                 <span>{t.projectSource}</span>
-                {activeTag && <IconHelper name="filter" type="filter" className={`animate-pulse ${isDark ? 'text-cyan-400' : 'text-cyan-500'}`} />}
+                {activeTag && <IconHelper name="filter" type="filter" className={`animate-pulse ${isDark ? 'text-cyan-400' : 'text-cyan-500'}`} theme={theme} />}
             </div>
             <div className="flex-1 pb-4">
               <FileTreeItem 

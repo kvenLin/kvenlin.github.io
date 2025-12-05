@@ -231,6 +231,12 @@ function App() {
             e.preventDefault();
             setIsSidebarOpen(prev => !prev);
         }
+
+        // Toggle Theme (Ctrl+Shift+U / Cmd+Shift+U)
+        if ((e.metaKey || e.ctrlKey) && e.shiftKey && key === 'u') {
+            e.preventDefault();
+            setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+        }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -433,7 +439,7 @@ function App() {
             className={`absolute top-6 left-6 z-50 p-2 rounded-lg backdrop-blur-md transition-all border
                 ${theme === 'dark' 
                     ? 'bg-black/40 border-white/10 text-gray-400 hover:text-white hover:border-cyan-500/50' 
-                    : 'bg-white/80 border-slate-200 text-slate-500 hover:text-cyan-600 hover:border-cyan-200 shadow-lg'}`
+                    : 'bg-[#f8fafc]/80 border-slate-200 text-slate-500 hover:text-cyan-600 hover:border-cyan-200 shadow-lg'}`
             }
             onClick={() => setIsSidebarOpen(true)}
         >
@@ -455,7 +461,7 @@ function App() {
             className={`fixed z-50 p-2 rounded-full backdrop-blur-md transition-colors shadow-lg
                 ${theme === 'dark'
                     ? 'bg-black/60 border border-cyan-500/50 text-cyan-400 hover:text-white hover:bg-cyan-500/20 hover:border-cyan-400 shadow-cyan-500/20'
-                    : 'bg-white/90 border border-slate-200 text-cyan-500 hover:bg-cyan-50 hover:border-cyan-200 shadow-cyan-500/10'}`
+                    : 'bg-[#f8fafc]/90 border border-slate-200 text-cyan-500 hover:bg-cyan-50 hover:border-cyan-200 shadow-cyan-500/10'}`
             }
             style={{
               left: 8,
@@ -483,7 +489,7 @@ function App() {
             className={`fixed z-50 p-2 rounded-full backdrop-blur-md transition-colors shadow-lg
                 ${theme === 'dark'
                     ? 'bg-black/60 border border-cyan-500/50 text-cyan-400 hover:text-white hover:bg-cyan-500/20 hover:border-cyan-400 shadow-cyan-500/20'
-                    : 'bg-white/90 border border-slate-200 text-cyan-500 hover:bg-cyan-50 hover:border-cyan-200 shadow-cyan-500/10'}`
+                    : 'bg-[#f8fafc]/90 border border-slate-200 text-cyan-500 hover:bg-cyan-50 hover:border-cyan-200 shadow-cyan-500/10'}`
             }
             style={{
               left: sidebarWidth + 8,
@@ -534,7 +540,7 @@ function App() {
                         className={`p-3 rounded-full shadow-lg border backdrop-blur-md transition-all
                             ${theme === 'dark' 
                                 ? 'bg-black/60 text-gray-400 border-white/10 hover:text-yellow-400 hover:border-yellow-400/50' 
-                                : 'bg-white/90 text-gray-600 border-gray-200 hover:text-gray-900 hover:border-gray-400'}
+                                : 'bg-[#f8fafc]/90 text-gray-600 border-gray-200 hover:text-gray-900 hover:border-gray-400'}
                         `}
                         title={theme === 'dark' ? '切换到亮色模式' : '切换到暗色模式'}
                      >
@@ -552,7 +558,7 @@ function App() {
                         className={`p-3 rounded-full shadow-lg border backdrop-blur-md transition-all
                             ${theme === 'dark'
                                 ? 'bg-black/60 text-gray-400 border-white/10 hover:text-cyan-400 hover:border-cyan-400/50'
-                                : 'bg-white/90 text-gray-600 border-gray-200 hover:text-cyan-500 hover:border-cyan-400'}
+                                : 'bg-[#f8fafc]/90 text-gray-600 border-gray-200 hover:text-cyan-500 hover:border-cyan-400'}
                         `}
                      >
                         <ArrowUp size={20} />
@@ -569,7 +575,7 @@ function App() {
                         className={`p-3 rounded-full shadow-lg border backdrop-blur-md transition-all
                             ${theme === 'dark'
                                 ? 'bg-black/60 text-gray-400 border-white/10 hover:text-cyan-400 hover:border-cyan-400/50'
-                                : 'bg-white/90 text-gray-600 border-gray-200 hover:text-cyan-500 hover:border-cyan-400'}
+                                : 'bg-[#f8fafc]/90 text-gray-600 border-gray-200 hover:text-cyan-500 hover:border-cyan-400'}
                         `}
                      >
                         <ArrowDown size={20} />
@@ -584,7 +590,7 @@ function App() {
                             p-3 rounded-full shadow-lg border backdrop-blur-md transition-all
                             ${isTerminalOpen 
                                 ? 'bg-cyan-600 text-white border-cyan-400 shadow-[0_0_15px_rgba(8,145,178,0.5)]' 
-                                : (theme === 'dark' ? 'bg-black/60 text-gray-400 border-white/10 hover:text-cyan-400 hover:border-cyan-400/50' : 'bg-white/90 text-gray-600 border-gray-200 hover:text-cyan-500 hover:border-cyan-400')}
+                                : (theme === 'dark' ? 'bg-black/60 text-gray-400 border-white/10 hover:text-cyan-400 hover:border-cyan-400/50' : 'bg-[#f0f5fb]/95 text-gray-600 border-gray-200 hover:text-cyan-500 hover:border-cyan-400')}
                         `}
                      >
                        <TerminalSquare size={20} />
@@ -603,7 +609,7 @@ function App() {
                                     ? 'bg-cyan-600 text-white border-cyan-400 shadow-[0_0_15px_rgba(8,145,178,0.4)]'
                                     : (theme === 'dark'
                                         ? 'bg-black/60 text-gray-400 border-white/10 hover:text-cyan-300 hover:border-cyan-400/40'
-                                        : 'bg-white/90 text-gray-600 border-gray-200 hover:text-cyan-500 hover:border-cyan-400')}
+                                        : 'bg-[#f8fafc]/90 text-gray-600 border-gray-200 hover:text-cyan-500 hover:border-cyan-400')}
                             `}
                             title="查看快捷键"
                         >
@@ -647,6 +653,18 @@ function App() {
                                                 <kbd className="shortcut-kbd">Ctrl</kbd>
                                                 <kbd className="shortcut-kbd">Shift</kbd>
                                                 <kbd className="shortcut-kbd">P</kbd>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="text-[11px] text-gray-500 mb-1">切换主题</p>
+                                            <div className="flex items-center gap-2 text-xs font-mono">
+                                                <kbd className="shortcut-kbd">⌘</kbd>
+                                                <kbd className="shortcut-kbd">⇧</kbd>
+                                                <kbd className="shortcut-kbd">U</kbd>
+                                                <span className="text-gray-600">/</span>
+                                                <kbd className="shortcut-kbd">Ctrl</kbd>
+                                                <kbd className="shortcut-kbd">Shift</kbd>
+                                                <kbd className="shortcut-kbd">U</kbd>
                                             </div>
                                         </div>
                                     </div>

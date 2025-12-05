@@ -46,22 +46,22 @@ export const DashboardCategories: React.FC<DashboardCategoriesProps> = ({
       ? ['bg-cyan-900/40', 'border-cyan-500/30']
       : isDark
         ? ['bg-[#0f172a]/40', 'border-white/5']
-        : ['bg-white', 'border-slate-200'];
+        : ['bg-[#e6ecf5]', 'border-slate-300/70'];
     const hover = active
       ? ''
       : isDark
         ? 'group-hover:bg-[#0f172a]/55'
-        : 'group-hover:bg-white group-hover:border-cyan-200';
+        : 'group-hover:bg-[#dde6f3] group-hover:border-cyan-300';
     return `${base[0]} ${base[1]} ${hover}`;
   };
   const cardBase = (active: boolean) =>
     active
       ? isDark
         ? 'bg-gradient-to-br from-cyan-950/70 via-[#0f172a]/90 to-[#0f172a]/80 border-cyan-500/50 text-white'
-        : 'bg-gradient-to-br from-white via-cyan-50 to-blue-50 border-cyan-300 text-slate-900 shadow-[0_25px_40px_rgba(15,23,42,0.12)]'
+        : 'bg-gradient-to-br from-[#e6ecf5] via-[#d4e4f5] to-[#c8daf0] border-cyan-400/70 text-slate-800 shadow-[0_20px_40px_rgba(15,23,42,0.12)]'
       : isDark
         ? 'bg-gradient-to-br from-[#0f172a]/60 via-[#0f172a]/50 to-[#0B1121]/60 border-white/10 text-gray-100 hover:border-cyan-500/40 hover:shadow-2xl hover:shadow-cyan-900/20'
-        : 'bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200 text-slate-700 hover:border-cyan-200 hover:shadow-[0_25px_45px_rgba(15,23,42,0.08)]';
+        : 'bg-gradient-to-br from-[#e6ecf5] to-[#dde6f3] border border-slate-300/70 text-slate-800 shadow-[0_20px_40px_rgba(15,23,42,0.10)] hover:border-cyan-300 hover:from-[#dde6f3] hover:to-[#d4dced]';
   const chipBase = (active: boolean) =>
     active
       ? isDark
@@ -82,7 +82,7 @@ export const DashboardCategories: React.FC<DashboardCategoriesProps> = ({
         : 'text-slate-400 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 group-hover:text-cyan-500';
   const loadMoreBtn = isDark
     ? 'bg-white/5 hover:bg-white/10 border border-white/10 hover:border-cyan-500/30 text-gray-400 hover:text-white'
-    : 'bg-white/90 hover:bg-white border border-slate-200 hover:border-cyan-200 text-slate-500 hover:text-cyan-600 shadow-[0_10px_30px_rgba(15,23,42,0.08)]';
+    : 'bg-[#e6ecf5] border border-slate-300/70 hover:border-cyan-300 text-slate-600 hover:text-cyan-600 shadow-[0_10px_30px_rgba(15,23,42,0.10)]';
 
   return (
     <motion.div layout="size" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14, duration: 0.22 }} className="flex flex-col gap-4">

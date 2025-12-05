@@ -134,9 +134,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: -20 }}
         className={`w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden relative z-10 flex flex-col border
-          ${isDark ? 'bg-[#0f172a] border-white/10' : 'bg-white border-slate-200 text-slate-800'}`}
+          ${isDark ? 'bg-[#0f172a] border-white/10' : 'bg-gradient-to-br from-[#e6ecf5] to-[#dde6f3] border-slate-300/70 text-slate-800'}`}
       >
-        <div className={`flex items-center px-4 py-3 border-b ${isDark ? 'border-white/5 bg-white/5' : 'border-slate-200 bg-slate-50'}`}>
+        <div className={`flex items-center px-4 py-3 border-b ${isDark ? 'border-white/5 bg-white/5' : 'border-slate-300/70 bg-[#dde6f3]/80'}`}>
             <Search className={`w-5 h-5 mr-3 ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`} />
             <input 
                 autoFocus
@@ -147,7 +147,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 onKeyDown={handleKeyDown}
             />
             <div className="flex gap-2">
-                 <kbd className={`hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-white/10 text-gray-400' : 'bg-white text-slate-500 border border-slate-200'}`}>ESC</kbd>
+                 <kbd className={`hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-white/10 text-gray-400' : 'bg-[#dde6f3] text-slate-500 border border-slate-200'}`}>ESC</kbd>
             </div>
         </div>
 

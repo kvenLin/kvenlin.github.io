@@ -64,22 +64,22 @@ export const EditorArea: React.FC<EditorAreaProps> = React.memo(({
   const isDark = theme !== 'light';
   const panelClasses = isDark 
     ? 'border border-white/5 bg-[#0f172a]/40 text-gray-100' 
-    : 'border border-slate-300/70 bg-gradient-to-br from-[#edf1fb]/85 via-[#e4e9f6]/90 to-[#d4dced]/85 text-[#1c2542] shadow-[0_35px_80px_rgba(15,23,42,0.18)]';
+    : 'border border-slate-300/70 bg-gradient-to-br from-[#e0e8f5]/90 via-[#d4dced]/95 to-[#c8d4e6]/90 text-[#1c2542] shadow-[0_35px_80px_rgba(15,23,42,0.20)]';
   const tabStripClasses = isDark 
     ? 'border-white/5 bg-black/20'
-    : 'border-slate-200/70 bg-[#e6ebf5]/70';
+    : 'border-slate-300/70 bg-[#dde6f3]/80';
   const activeTabClasses = isDark
     ? 'bg-[#0f172a]/60 text-cyan-100 border-white/10 shadow-lg mb-[-1px] pb-2.5 z-10'
-    : 'bg-[#f8faff] text-[#23567a] border-slate-200/80 shadow-[0_15px_35px_rgba(15,23,42,0.12)] mb-[-1px] pb-2.5 z-10';
+    : 'bg-[#e6ecf5] text-[#1a4a68] border-slate-300/70 shadow-[0_15px_35px_rgba(15,23,42,0.15)] mb-[-1px] pb-2.5 z-10';
   const inactiveTabClasses = isDark
     ? 'bg-transparent text-gray-500 border-transparent hover:bg-white/5 hover:text-gray-300'
     : 'bg-transparent text-slate-500 border-transparent hover:bg-[#e8eef8]/80 hover:text-[#1f2c4c]';
   const tocCardClasses = isDark
     ? 'border-white/5 bg-[#070c16]/80'
-    : 'border-slate-200/80 bg-gradient-to-br from-[#f5f7fe] via-[#ecf1fb] to-[#dfe6f5] text-[#1f2a44]';
+    : 'border-slate-300/70 bg-gradient-to-br from-[#e6ecf5] via-[#dde6f3] to-[#d4dced] text-[#1f2a44]';
   const tocFixedClasses = isDark
     ? 'border-white/5 bg-[#070c16]/95'
-    : 'border-slate-200/80 bg-gradient-to-br from-[#f0f4fb] via-[#e6ebf6] to-[#dae2f1] text-[#1f2a44] shadow-[0_20px_45px_rgba(15,23,42,0.18)]';
+    : 'border-slate-300/70 bg-gradient-to-br from-[#e6ecf5] via-[#dde6f3] to-[#d4dced] text-[#1f2a44] shadow-[0_20px_45px_rgba(15,23,42,0.20)]';
   const pathBarClasses = isDark 
     ? 'text-gray-500 border-white/5'
     : 'text-[#5e6c8d] border-slate-200/80';
@@ -317,7 +317,7 @@ export const EditorArea: React.FC<EditorAreaProps> = React.memo(({
                   }`}
                 >
                   <div className={`absolute top-0 left-0 right-0 h-[2px] bg-cyan-500 ${isActive ? 'opacity-100' : 'opacity-0'}`} />
-                  <IconHelper name={file.name} className={`mr-2 ${isActive ? (isDark ? 'opacity-100' : 'opacity-100 text-cyan-600') : (isDark ? 'opacity-50' : 'opacity-60 text-slate-400')}`} />
+                  <IconHelper name={file.name} className={`mr-2 ${isActive ? (isDark ? 'opacity-100' : 'opacity-100 text-cyan-600') : (isDark ? 'opacity-50' : 'opacity-60 text-slate-400')}`} theme={theme} />
                   <span className="truncate flex-1">{file.name}</span>
                   <button
                     onClick={e => onCloseTab(fileId, e)}
