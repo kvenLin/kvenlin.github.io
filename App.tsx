@@ -186,22 +186,6 @@ function App() {
         const key = e.key.toLowerCase();
         const code = typeof e.code === 'string' ? e.code.toLowerCase() : '';
 
-        if (import.meta.env.DEV && (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)) {
-            const target = e.target as HTMLElement | null;
-            const active = document.activeElement as HTMLElement | null;
-            console.info('[hotkey-debug]', {
-                key: e.key,
-                code: e.code,
-                meta: e.metaKey,
-                ctrl: e.ctrlKey,
-                shift: e.shiftKey,
-                alt: e.altKey,
-                repeat: e.repeat,
-                targetTag: target?.tagName,
-                activeTag: active?.tagName,
-            });
-        }
-
         // Global ESC Handler
         if (e.key === 'Escape') {
             // Priority 1: Command Palette (If it doesn't stop propagation itself, catch it here)
@@ -468,6 +452,13 @@ function App() {
     setIsHiddenEditorOpen(false);
     downloadMarkdown(payload.relativePath, payload.fileContent);
   }, [downloadMarkdown]);
+
+  const handleExportPost = useCallback(
+    (payload: NewPostPayload) => {
+      downloadMarkdown(payload.relativePath, payload.fileContent);
+    },
+    [downloadMarkdown],
+  );
 
   return (
     <div 
@@ -821,6 +812,7 @@ function App() {
         fileSystem={fileSystem}
         theme={theme}
         onSave={handleCreatePost}
+        onExport={handleExportPost}
       />
 
       {/* Terminal Overlay */}

@@ -127,28 +127,33 @@ export const HiddenMarkdownEditor: React.FC<HiddenMarkdownEditorProps> = ({
   const [slugEdited, setSlugEdited] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const markdownRef = useRef<HTMLTextAreaElement>(null);
   const imageEntriesRef = useRef<ImageEntry[]>([]);
 
   useEffect(() => {
-    if (open) {
-      const previouslyFocused = document.activeElement as HTMLElement | null;
-      const trap = () => {
-        if (!containerRef.current) return;
-        const focusable = containerRef.current.querySelectorAll<HTMLElement>(focusableSelector);
-        focusable[0]?.focus();
-      };
-      const timer = setTimeout(trap, 50);
-      const prevOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        clearTimeout(timer);
-        document.body.style.overflow = prevOverflow;
-        previouslyFocused?.focus();
-      };
+    if (!open) {
+      setExporting(false);
+      return undefined;
     }
-    return undefined;
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const trap = () => {
+      if (!containerRef.current) return;
+      const focusable = containerRef.current.querySelectorAll<HTMLElement>(focusableSelector);
+      focusable[0]?.focus();
+    };
+    const timer = setTimeout(trap, 50);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      clearTimeout(timer);
+      document.body.style.overflow = prevOverflow;
+      previouslyFocused?.focus();
+      setExporting(false);
+    };
   }, [open]);
 
   useEffect(() => {
@@ -314,11 +319,20 @@ export const HiddenMarkdownEditor: React.FC<HiddenMarkdownEditorProps> = ({
   };
 
   const handleExport = async () => {
+    if (exporting || saving) return;
+    setExporting(true);
+    setError(null);
+
     try {
-      await onExport(buildPayload());
+      const payload = buildPayload();
+      await onExport(payload);
     } catch (err) {
       console.error(err);
       setError('导出失败，请检查控制台日志。');
+    } finally {
+      // 短暂延迟提供视觉反馈，避免闪烁
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setExporting(false);
     }
   };
 
@@ -413,11 +427,11 @@ export const HiddenMarkdownEditor: React.FC<HiddenMarkdownEditorProps> = ({
                   isDark
                     ? 'bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20 border border-cyan-400/40'
                     : 'bg-white text-cyan-600 border border-cyan-200 hover:bg-cyan-50'
-                }`}
+                } ${exporting ? 'opacity-60 cursor-not-allowed' : ''}`}
                 onClick={handleExport}
-                disabled={saving}
+                disabled={saving || exporting}
               >
-                导出 Markdown
+                {exporting ? '导出中…' : '导出 Markdown'}
               </button>
               <button
                 onClick={onClose}
