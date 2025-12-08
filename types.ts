@@ -14,6 +14,8 @@ export interface FileSystemItem {
   date?: string;
   tags?: string[];
   categories?: string[];
+  summary?: string;
+  relativePath?: string;
 }
 
 export interface FileSystem {

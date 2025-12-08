@@ -2,7 +2,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { INITIAL_FILE_SYSTEM } from './constants';
-import { FileSystem, Theme } from './types';
+import { FileSystem, FileType, Theme } from './types';
 import { FileExplorer } from './components/FileExplorer';
 import { EditorArea } from './components/EditorArea';
 import { Terminal } from './components/Terminal';
@@ -12,6 +12,7 @@ import { Background } from './components/Background';
 import { TerminalSquare, Menu, ArrowUp, ArrowDown, Moon, Sun, LayoutGrid, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react';
 import { Language, translations } from './translations';
 import { loadPosts, loadSingleFile } from './utils/postLoader';
+import { HiddenMarkdownEditor, NewPostPayload } from './components/editor/HiddenMarkdownEditor';
 
 const SIDEBAR_MIN_WIDTH = 240;
 const SIDEBAR_MAX_WIDTH = 480;
@@ -36,6 +37,7 @@ function App() {
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [isNearLeftEdge, setIsNearLeftEdge] = useState(false);
   const [isNearCollapsedEdge, setIsNearCollapsedEdge] = useState(false);
+  const [isHiddenEditorOpen, setIsHiddenEditorOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const sidebarResizeState = useRef({ startX: 0, startWidth: SIDEBAR_DEFAULT_WIDTH });
   const lastNearLeftEdgeRef = useRef(false);
@@ -182,6 +184,23 @@ function App() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
         const key = e.key.toLowerCase();
+        const code = typeof e.code === 'string' ? e.code.toLowerCase() : '';
+
+        if (import.meta.env.DEV && (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)) {
+            const target = e.target as HTMLElement | null;
+            const active = document.activeElement as HTMLElement | null;
+            console.info('[hotkey-debug]', {
+                key: e.key,
+                code: e.code,
+                meta: e.metaKey,
+                ctrl: e.ctrlKey,
+                shift: e.shiftKey,
+                alt: e.altKey,
+                repeat: e.repeat,
+                targetTag: target?.tagName,
+                activeTag: active?.tagName,
+            });
+        }
 
         // Global ESC Handler
         if (e.key === 'Escape') {
@@ -218,6 +237,13 @@ function App() {
         if ((e.metaKey || e.ctrlKey) && e.shiftKey && key === 'p') {
             e.preventDefault();
             setIsTerminalOpen(prev => !prev);
+            return;
+        }
+
+        // Hidden Markdown Editor (Cmd/Ctrl + ,)
+        if ((e.metaKey || e.ctrlKey) && !e.shiftKey && (key === ',' || code === 'comma')) {
+            e.preventDefault();
+            setIsHiddenEditorOpen(prev => !prev);
             return;
         }
 
@@ -346,6 +372,102 @@ function App() {
       return newOpenFiles;
     });
   }, [activeFileId]);
+
+  const downloadMarkdown = useCallback((filename: string, content: string) => {
+    try {
+      const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename || 'new-post.md';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to trigger markdown download', error);
+    }
+  }, []);
+
+  const handleCreatePost = useCallback(async (payload: NewPostPayload) => {
+    let createdFileId = '';
+    setFileSystem(prev => {
+      const next = { ...prev };
+      const normalizeSegment = (segment: string) =>
+        segment
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9\-_,\u4e00-\u9fa5]/g, '');
+
+      const ensureFolder = (segments: string[]): string => {
+        let parentId = 'folder-posts';
+        let pathAccumulator: string[] = [];
+        segments.forEach(segment => {
+          const cleaned = segment.trim();
+          if (!cleaned) return;
+          pathAccumulator.push(normalizeSegment(cleaned));
+          const folderId = `folder-posts-${pathAccumulator.join('-')}`;
+          if (!next[folderId]) {
+            next[folderId] = {
+              id: folderId,
+              name: cleaned,
+              type: FileType.FOLDER,
+              parentId,
+              children: [],
+              isOpen: true,
+            };
+          }
+          const parent = next[parentId];
+          if (parent) {
+            parent.children = Array.from(new Set([...(parent.children || []), folderId]));
+          }
+          parentId = folderId;
+        });
+        return parentId;
+      };
+
+      const parentId = ensureFolder(payload.categories);
+      const relativeSegments = payload.relativePath.replace(/\\/g, '/').split('/');
+      const safeId = `post-${relativeSegments
+        .join('-')
+        .replace(/\.md$/, '')
+        .replace(/[^a-zA-Z0-9\-_,\u4e00-\u9fa5]/g, '-')
+        .replace(/-+/g, '-')
+        .toLowerCase()}`;
+
+      const fileItem = {
+        id: safeId,
+        name: relativeSegments[relativeSegments.length - 1] || `${payload.slug}.md`,
+        type: FileType.FILE,
+        parentId: parentId || 'folder-posts',
+        content: payload.markdownBody,
+        tags: payload.tags,
+        categories: payload.categories,
+        summary: payload.summary,
+        date: payload.date,
+        relativePath: payload.relativePath,
+      };
+
+      createdFileId = safeId;
+      next[safeId] = fileItem;
+
+      const parent = next[fileItem.parentId];
+      if (parent) {
+        parent.children = Array.from(new Set([...(parent.children || []), safeId]));
+      }
+
+      return next;
+    });
+
+    if (createdFileId) {
+      setOpenFiles(prev => (prev.includes(createdFileId) ? prev : [...prev, createdFileId]));
+      setActiveFileId(createdFileId);
+    }
+
+    setIsHiddenEditorOpen(false);
+    downloadMarkdown(payload.relativePath, payload.fileContent);
+  }, [downloadMarkdown]);
 
   return (
     <div 
@@ -692,6 +814,14 @@ function App() {
          </motion.button>
 
        </div>
+
+       <HiddenMarkdownEditor
+        open={isHiddenEditorOpen}
+        onClose={() => setIsHiddenEditorOpen(false)}
+        fileSystem={fileSystem}
+        theme={theme}
+        onSave={handleCreatePost}
+      />
 
       {/* Terminal Overlay */}
       <AnimatePresence>
